@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <!-- 1. Icon cho iPhone/iPad (iOS) -->
+    <link rel="apple-touch-icon" href="https://i.ibb.co/JR0VsXrs/S-VANHOCVN.png">
+
+    <!-- 2. Icon cho Android/Chrome -->
+    <link rel="icon" type="image/png" href="https://i.ibb.co/JR0VsXrs/S-VANHOCVN.png">
+
+    <!-- 3. Tên hiển thị dưới Icon trên màn hình chính -->
+    <meta name="apple-mobile-web-app-title" content="S-LEXIS">
+
+    <!-- 4. Chế độ chạy như App (Ẩn thanh địa chỉ trình duyệt) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- 5. Màu sắc thanh trạng thái trên Mobile -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#020617">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>S-VANHOCVN • LITERARY AI v5.0</title>
+    <link rel="preload" as="image" href="https://i.ibb.co/JR0VsXrs/S-VANHOCVN.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root { 
+            --indigo: #6366f1; --rose: #f472b6; --emerald: #10b981; 
+            --red: #ef4444; --bg: #020617; --card: rgba(15, 23, 42, 0.7);
+        }
+
+        html { scroll-behavior: smooth; height: -webkit-fill-available; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: #f1f5f9; overflow-x: hidden; }
+        
+        .mesh-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 100% 100%, rgba(244, 114, 182, 0.1) 0%, transparent 50%);
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px; z-index: -1;
+        }
+
+        .glass { background: var(--card); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+
+        #essay-editor {
+            font-size: 1.15rem; line-height: 2.2; color: #e2e8f0; outline: none;
+            min-height: 100%; width: 100%; padding: 40px; font-weight: 400;
+        }
+        #essay-editor:empty:before { content: attr(placeholder); color: rgba(255, 255, 255, 0.2); font-style: italic; }
+
+        .ai-marker { cursor: pointer; transition: 0.3s; position: relative; border-radius: 4px; padding: 2px 0; }
+        .ai-marker.error { border-bottom: 3px solid var(--red); background: rgba(239, 68, 68, 0.1); }
+        .ai-marker.upgrade { border-bottom: 3px solid var(--indigo); background: rgba(99, 102, 241, 0.1); }
+
+        .custom-tooltip {
+            position: fixed; padding: 12px 16px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; color: #f1f5f9;
+            font-size: 11px; z-index: 10000; pointer-events: none; width: 240px; display: none; opacity: 0; transition: opacity 0.2s;
+        }
+
+        /* Architect results animation */
+        #architect-results {
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 0; opacity: 0; transform: translateY(30px); overflow: hidden;
+        }
+        #architect-results.active { max-height: 1500px; opacity: 1; transform: translateY(0); margin-top: 32px; }
+
+        /* Sidebar Buttons */
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 72px; padding: 12px 0; border-radius: 20px; transition: all 0.4s; color: #475569; position: relative; }
+        .nav-btn.active { color: #818cf8; }
+        .nav-icon-wrapper { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .nav-btn.active .nav-icon-wrapper { background: rgba(99, 102, 241, 0.12); border-color: rgba(99, 102, 241, 0.4); }
+        .status-dot { position: absolute; bottom: 0; width: 0; height: 3px; background: #6366f1; border-radius: 10px; transition: all 0.4s; }
+        .nav-btn.active .status-dot { width: 24px; }
+
+        /* Neural Overlay */
+        .neural-overlay { 
+            position: absolute; 
+            inset: 0; 
+            background: #020617; /* Sửa thành màu tối đậm để che chữ */
+            backdrop-filter: blur(10px); 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 50; /* Đảm bảo nằm trên cùng */
+            border-radius: inherit; 
+        }
+        .radar-circle { width: 60px; height: 60px; border: 2px solid rgba(99, 102, 241, 0.2); border-top: 2px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 1024px) {
+            .sidebar-mobile { width: 100% !important; height: 70px !important; flex-direction: row !important; position: relative !important; justify-content: center !important; gap: 40px !important; border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important; background: rgba(2, 6, 23, 0.8) !important; }
+            .flex-h-screen-mobile { height: auto !important; overflow-y: auto !important; }
+            .aside-mobile { width: 100% !important; border-left: none !important; padding-bottom: 100px !important; }
+            .main-layout-mobile { flex-direction: column !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="tooltip" class="custom-tooltip"></div>
+    <div class="mesh-bg"></div>
+
+    <!-- Màn hình chờ AI -->
+    <div id="loader" class="fixed inset-0 bg-slate-950/95 z-[9999] hidden flex flex-col items-center justify-center">
+        <div class="w-20 h-20 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+        <p class="mt-8 text-indigo-400 font-black tracking-widest text-[11px] uppercase animate-pulse">S-VANHOCVN AI đang thẩm định văn chương...</p>
+    </div>
+
+    <div class="flex h-screen flex-col flex-h-screen-mobile">
+        <!-- HEADER -->
+        <header class="h-16 flex items-center justify-between px-8 border-b border-white/5 bg-slate-950/80 z-50 backdrop-blur-xl">
+            <div class="flex items-center gap-4 group cursor-pointer" onclick="location.reload()">
+                <!-- Thay thế div cũ bằng ảnh logo mới -->
+                <div class="relative">
+                    <img src="https://i.ibb.co/JR0VsXrs/S-VANHOCVN.png" 
+                        alt="S-VANHOC Logo" 
+                        fetchpriority="high"
+                        loading="eager"
+                        decoding="async"
+                        class="w-10 h-10 object-cover rounded-xl drop-shadow-[0_0_10px_rgba(99,102,241,0.5)] group-hover:scale-110 transition-transform duration-300">
+                </div>
+                
+                <div>
+                    <h1 class="text-xl font-black tracking-tighter uppercase italic leading-none">S-VANHOC <span class="text-indigo-500">VIETNAM</span></h1>
+                    <p class="text-[9px] font-black text-slate-500 tracking-[0.2em]">TRÍ TUỆ NHÂN TẠO PHÂN TÍCH VĂN HỌC</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 px-4 py-2 rounded-full border border-white/5 bg-white/5">
+                <span class="text-[11px] font-bold text-white tracking-wide uppercase">Bộ phân tích hoạt động</span>
+                <div class="relative w-3 h-3">
+                    <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping"></div>
+                    <div class="relative bg-emerald-500 w-3 h-3 rounded-full"></div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden main-layout-mobile">
+            <!-- Sidebar -->
+            <div class="w-20 border-r border-white/5 bg-slate-950/50 flex flex-col items-center py-8 gap-10 sidebar-mobile">
+                <button onclick="switchTab('architect')" id="nav-architect" class="nav-btn active">
+                    <div class="nav-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </div>
+                    <span class="text-[9px] font-extrabold uppercase">Dàn ý</span>
+                    <div class="status-dot"></div>
+                </button>
+                <button onclick="switchTab('studio')" id="nav-studio" class="nav-btn">
+                    <div class="nav-icon-wrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                    </div>
+                    <span class="text-[9px] font-extrabold uppercase">Phòng viết</span>
+                    <div class="status-dot"></div>
+                </button>
+            </div>
+
+            <!-- Main Working Area -->
+            <main class="flex-1 p-8 flex flex-col gap-6 relative overflow-y-auto">
+                <div class="max-w-4xl mx-auto w-full flex flex-col gap-8">
+                    
+                    <!-- MODULE 1: ARCHITECT -->
+                    <div id="architect-view" class="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom duration-700">
+                        <div class="relative">
+                            <h2 class="text-4xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">Kiến Trúc Văn Chương</h2>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-2">Cấu trúc & Luận điểm văn học</p>
+                        </div>
+
+                        <div class="glass p-8 rounded-[2.5rem] border-indigo-500/20 relative group overflow-hidden">
+                            <h5 class="text-[10px] font-black uppercase text-indigo-400 mb-5 italic flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                                Nhập đề bài nghị luận
+                            </h5>
+                            <textarea id="topic-input" 
+                                oninput="analyzeTopic(this.value); this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';" 
+                                placeholder="Dán đề bài văn của bạn vào đây..." 
+                                rows="1"
+                                class="w-full bg-slate-950/40 border border-white/5 rounded-2xl p-5 text-base outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-200 resize-none overflow-hidden min-h-[60px]"></textarea>
+                        </div>
+
+                        <!-- CẤU TRÚC 3 PHẦN: 2 Ô KẾT QUẢ VÀ 1 NÚT BẤM -->
+                        <div id="architect-results" class="">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                
+                                <!-- PHẦN 1: SUGGESTED STRUCTURE (Màu xanh) -->
+                                <div class="glass p-8 rounded-[2.5rem] relative border border-emerald-500/20 overflow-hidden">
+                                    <!-- Hiệu ứng Radar khi đang quét (tự động ẩn khi xong) -->
+                                    <div id="overlay-struct" class="neural-overlay">
+                                    <div class="radar-circle"></div>
+                                    <div class="mt-4 text-[9px] font-black text-emerald-400 animate-pulse">ĐANG PHÂN TÍCH CẤU TRÚC...</div>
+                                </div>
+
+                                <h6 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                                    CẤU TRÚC BÀI VIẾT ĐỀ XUẤT
+                                </h6>
+                                    
+                                    <textarea id="arch-structure" readonly 
+                                        class="w-full bg-transparent border-none text-[14px] leading-relaxed text-slate-300 h-64 outline-none resize-none font-medium custom-scrollbar" 
+                                        placeholder="Dạng bài và cấu trúc sẽ hiện ở đây..."></textarea>
+                                </div>
+
+                                <!-- PHẦN 2: KEY ARGUMENTS & IDEAS (Màu hồng) -->
+                                <div class="glass p-8 rounded-[2.5rem] relative border border-rose-500/20 overflow-hidden">
+                                    <div id="overlay-plan" class="neural-overlay">
+                                    <div class="radar-circle"></div>
+                                    <div class="mt-4 text-[9px] font-black text-rose-400 animate-pulse">ĐANG PHÁC THẢO Ý TƯỞNG...</div>
+                                </div>
+
+                                <h6 class="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f472b6]"></span>
+                                    HỆ THỐNG LUẬN ĐIỂM & Ý TƯỞNG
+                                </h6>
+                                    
+                                    <textarea id="arch-plan" readonly 
+                                        class="w-full bg-transparent border-none text-[14px] leading-relaxed text-slate-300 h-64 outline-none resize-none font-medium custom-scrollbar" 
+                                        placeholder="Hệ thống luận điểm sẽ hiện ở đây..."></textarea>
+                                </div>
+
+                            </div>
+
+                            <!-- PHẦN 3: NÚT BẤM TÍM FULL WIDTH KÈM MŨI TÊN -->
+                            <button id="btn-transfer" onclick="transferToStudio()" 
+                                class="w-full mt-8 relative overflow-hidden group bg-indigo-600 hover:bg-indigo-500 py-6 rounded-[1.5rem] font-black text-[13px] uppercase tracking-[0.2em] text-white transition-all shadow-2xl shadow-indigo-600/30 flex items-center justify-center gap-3 active:scale-[0.98]">
+                                
+                                <span class="relative z-10">Bắt đầu soạn thảo với dàn ý này</span>
+                                
+                                <!-- Icon Mũi tên -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-2 transition-transform duration-300">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+
+                                <!-- Hiệu ứng ánh sáng chạy ngang nút khi di chuột qua -->
+                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- MODULE 2: STUDIO -->
+                    <div id="studio-view" class="hidden flex flex-col gap-8 animate-in fade-in slide-in-from-right duration-700">
+                        <div class="flex flex-col md:flex-row justify-between gap-6">
+                            <div>
+                                <h2 class="text-3xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">Thiết Kế Tư Duy Văn Học</h2>
+                                <p class="text-[9px] text-indigo-400/60 font-bold uppercase tracking-[0.3em] mt-2">Tư duy văn chương & Thẩm định nghệ thuật</p>
+                            </div>
+                            <!-- Action Toolbar -->
+                            <div class="flex gap-3 w-full md:w-auto sticky top-0 z-[60] bg-[#020617] py-2">
+                                <button onclick="copyEssay()" class="group flex-1 md:flex-none flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl glass border border-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all active:scale-95">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-indigo-400"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                    <span class="text-slate-400 group-hover:text-indigo-400">Sao chép</span>
+                                </button>
+
+                                <button onclick="clearAll()" class="group flex-1 md:flex-none flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl glass border border-white/5 text-[10px] font-black uppercase tracking-widest hover:border-red-500/30 hover:bg-red-500/5 transition-all active:scale-95">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 group-hover:text-red-500 transition-all"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                    <span class="text-slate-400 group-hover:text-red-400">Reset</span>
+                                </button>
+
+                                <button onclick="masterScanner()" id="btn-scan" class="flex-[2] md:flex-none bg-indigo-600 hover:bg-indigo-500 px-10 py-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-indigo-500/20 transition-all active:scale-95">
+                                    Quét & Phân tích
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass rounded-[3rem] min-h-[650px] flex flex-col overflow-hidden border-white/5">
+                            <div id="outline-note-display" class="hidden bg-indigo-500/5 border-b border-white/5 p-0 transition-all"></div>
+                            <div class="flex-1 relative overflow-y-auto">
+                                <div id="essay-editor" contenteditable="true" spellcheck="false" placeholder="Bắt đầu viết bài văn của bạn tại đây..." class="focus:outline-none"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                            <div class="glass p-5 rounded-[2rem] text-center">
+                                <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Số chữ</p>
+                                <span id="wc" class="text-2xl font-black">0</span>
+                            </div>
+                            <div class="glass p-5 rounded-[2rem] text-center">
+                                <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Chỉ số mỹ từ</p>
+                                <span id="academic-stat" class="text-2xl font-black text-indigo-400">--</span>
+                            </div>
+                            <div class="glass p-5 rounded-[2rem] text-center">
+                                <p class="text-[8px] text-slate-500 uppercase font-black mb-1">Độ sâu lý luận</p>
+                                <span id="logic-level" class="text-2xl font-black text-rose-400">--</span>
+                            </div>
+                            <div class="glass p-5 rounded-[2rem] text-center bg-indigo-500/5 border-indigo-500/20">
+                                <p class="text-[8px] text-indigo-400 uppercase font-black mb-1">Điểm dự kiến</p>
+                                <span id="score-ui" class="text-2xl font-black text-indigo-400">---</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- CỘT CHẨN ĐOÁN -->
+            <aside id="diagnostic-sidebar" class="aside-mobile w-[400px] border-l border-white/5 bg-gray-950/30 p-8 hidden flex flex-col gap-8 overflow-y-auto">
+                <div class="p-6 glass rounded-[2.5rem] border-indigo-500/30">
+                    <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4 italic">Bản đồ năng lực văn chương</h4>
+                    <canvas id="radarChart"></canvas>
+                </div>
+
+                <div class="p-6 glass rounded-[2rem]">
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase mb-4 italic">Kiểm tra thông minh</h4>
+                    <ul class="space-y-4">
+                        <li id="check-ly-luan" class="flex items-center gap-3 text-[11px] font-bold text-slate-500 transition-all"><span>💡</span> Có yếu tố Lý luận văn học?</li>
+                        <li id="check-dan-chung" class="flex items-center gap-3 text-[11px] font-bold text-slate-500 transition-all"><span>🔗</span> Dẫn chứng có cụ thể không?</li>
+                        <li id="check-lap-tu" class="flex items-center gap-3 text-[11px] font-bold text-slate-500 transition-all"><span>♻️</span> Kiểm tra lỗi lặp từ ngữ?</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-4 flex-1">
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic border-b border-indigo-500/20 pb-2">Đề xuất nâng cấp Neural</h4>
+                    <div id="results-timeline" class="space-y-4">
+                        <div class="py-20 text-center opacity-30 text-[10px] uppercase font-black italic">Diagnosis Offline</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- MODAL XÁC NHẬN -->
+    <div id="neural-confirm" class="fixed inset-0 z-[10002] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-md"></div>
+        <div class="glass relative max-w-sm w-full p-10 rounded-[3rem] text-center border-white/10 animate-in zoom-in">
+            <h3 class="text-2xl font-black italic uppercase text-white mb-2">Xóa sạch bản thảo?</h3>
+            <p class="text-[11px] text-slate-400 font-bold uppercase mb-10 tracking-widest">Hành động này sẽ reset toàn bộ nơ-ron dữ liệu.</p>
+            <div class="flex gap-4">
+                <button onclick="closeConfirm()" class="flex-1 py-4 rounded-2xl glass text-[10px] font-black uppercase">Hủy</button>
+                <button onclick="executeClear()" class="flex-1 py-4 rounded-2xl bg-red-600 text-[10px] font-black uppercase text-white shadow-lg shadow-red-600/20">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- HỆ THỐNG BẢO MẬT --- */
+        document.addEventListener('keydown', e => {
+            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
+                e.preventDefault(); return false;
+            }
+        });
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+function switchTab(tabName) {
+    const studio = document.getElementById('studio-view');
+    const architect = document.getElementById('architect-view');
+    const sidebar = document.getElementById('diagnostic-sidebar');
+    const btnS = document.getElementById('nav-studio');
+    const btnA = document.getElementById('nav-architect');
+
+    if (tabName === 'architect') {
+        architect.classList.remove('hidden');
+        studio.classList.add('hidden');
+        if(sidebar) sidebar.classList.add('hidden');
+        btnA.classList.add('active');
+        btnS.classList.remove('active');
+    } else {
+        studio.classList.remove('hidden');
+        architect.classList.add('hidden');
+        if(sidebar) sidebar.classList.remove('hidden');
+        btnS.classList.add('active');
+        btnA.classList.remove('active');
+    }
+}
+
+        /* --- CHUYỂN DÀN Ý SANG PHÒNG VIẾT --- */
+ function transferToStudio() {
+    const struct = document.getElementById('arch-structure').value;
+    const plan = document.getElementById('arch-plan').value;
+    const topic = document.getElementById('topic-input').value;
+    const noteBox = document.getElementById('outline-note-display');
+
+    noteBox.innerHTML = `
+        <div class="p-6 md:p-8 relative">
+            <!-- Header chứa các nút điều hướng -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Neural Outline Reference</h3>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <!-- Nút THU GỌN -->
+                    <button id="btn-minimize-outline" onclick="toggleOutlineContent()" 
+                            class="px-5 py-2 rounded-[2rem] bg-white/5 border border-white/10 text-[11px] font-bold text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/30 transition-all uppercase tracking-wider">
+                        Thu gọn
+                    </button>
+                    
+                    <!-- Nút ĐÓNG -->
+                    <button onclick="document.getElementById('outline-note-display').classList.add('hidden')" 
+                            class="px-5 py-2 rounded-[2rem] bg-white/5 border border-white/10 text-[11px] font-bold text-slate-400 hover:bg-white/10 hover:text-white transition-all uppercase tracking-wider flex items-center gap-2">
+                        Đóng 
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Nội dung (Bọc trong div để dễ ẩn hiện) -->
+            <div id="outline-details-content" class="transition-all duration-500 overflow-hidden">
+                <div class="p-6 rounded-[1.5rem] bg-white/[0.03] border border-white/5 mb-6">
+                    <p class="text-slate-300 text-sm italic font-medium">"${topic}"</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-[9px] font-black text-indigo-400 uppercase mb-3 tracking-widest">Cấu trúc</p>
+                        <p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line">${struct}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-rose-400 uppercase mb-3 tracking-widest">Luận điểm</p>
+                        <p class="text-xs text-slate-400 leading-relaxed whitespace-pre-line">${plan}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    noteBox.classList.remove('hidden');
+    switchTab('studio');
+    showNeuralToast("Dàn ý đã được nạp vào Studio!", "upgrade");
+}
+
+/** 
+ * Hàm bổ trợ để thực hiện tính năng Thu gọn/Mở rộng
+ */
+function toggleOutlineContent() {
+    const content = document.getElementById('outline-details-content');
+    const btn = document.getElementById('btn-minimize-outline');
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        btn.innerText = "Thu gọn";
+        btn.classList.replace('text-emerald-400', 'text-indigo-400');
+    } else {
+        content.classList.add('hidden');
+        btn.innerText = "Mở rộng";
+        btn.classList.replace('text-indigo-400', 'text-emerald-400'); // Đổi màu khi đang thu gọn để gây chú ý
+    }
+}
+
+        /* --- HỆ THỐNG RADAR & CHART --- */
+        let radar;
+        function drawRadar(data = [0,0,0,0]) {
+            const ctx = document.getElementById('radarChart');
+            if(radar) radar.destroy();
+            radar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Kỹ năng', 'Mỹ từ', 'Dung lượng', 'Lý luận'],
+                    datasets: [{ data: data, backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: '#6366f1', borderWidth: 2, pointRadius: 2 }]
+                },
+                options: { scales: { r: { beginAtZero: true, max: 10, min: 0, grid: { color: 'rgba(255,255,255,0.05)' }, angleLines: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+        }
+        drawRadar();
+
+let lastDetectedType = ""; 
+let analysisTimeout;
+
+function analyzeTopic(val) {
+    const structBox = document.getElementById('arch-structure');
+    const planBox = document.getElementById('arch-plan');
+    const resultsArea = document.getElementById('architect-results');
+    const btnTransfer = document.getElementById('btn-transfer');
+    const overlayStruct = document.getElementById('overlay-struct');
+    const overlayPlan = document.getElementById('overlay-plan');
+    
+    const topic = val.toLowerCase().trim();
+
+    // 1. Nếu đề quá ngắn, ẩn toàn bộ kết quả và dừng lại
+    if (topic.length < 10) {
+        resultsArea.classList.remove('active');
+        lastDetectedType = "";
+        return; 
+    }
+
+    // 2. Nhận diện Dạng bài để chọn Cấu trúc (Structure)
+    let currentType = "";
+    if (topic.includes("thơ") || topic.includes("đoạn thơ") || topic.includes("bài thơ") || topic.includes("khổ thơ") || topic.includes("ý thơ") || topic.includes("tứ thơ") || topic.includes("vần thơ")) {
+    currentType = "NGHỊ LUẬN THƠ";
+} else if (topic.includes("truyện") || topic.includes("tác phẩm") || topic.includes("nhân vật") || topic.includes("vợ nhặt") || topic.includes("người lái đò") || topic.includes("sông đà") || topic.includes("rừng xà nu") || topic.includes("chiếc thuyền") || topic.includes("hồn trương ba")) {
+    currentType = "NGHỊ LUẬN TRUYỆN";
+} else if (topic.includes("ký") || topic.includes("bút ký") || topic.includes("tuỳ bút") || topic.includes("tản văn") || topic.includes("người lái đò sông đà") || topic.includes("ai đã đặt tên")) {
+    currentType = "NGHỊ LUẬN KÝ";
+} else if (topic.includes("đạo lý") || topic.includes("suy nghĩ về") || topic.includes("hiện tượng") || topic.includes("ý nghĩa") || topic.includes("bài học") || topic.includes("lối sống") || topic.includes("quan niệm") || topic.includes("câu chuyện") || topic.includes("thông điệp")) {
+    currentType = "NGHỊ LUẬN XÃ HỘI";
+} else if (topic.includes("kịch") || topic.includes("hồi kịch") || topic.includes("vở kịch") || topic.includes("tấm lòng") || topic.includes("lời thoại") || topic.includes("hồn trương ba")) {
+    currentType = "PHÂN TÍCH KỊCH";
+} else if (topic.includes("phú") || topic.includes("hịch") || topic.includes("cáo") || topic.includes("chiếu") || topic.includes("tấu") || topic.includes("văn tế") || topic.includes("bình ngô đại cáo") || topic.includes("hưng đạo đại vương") || topic.includes("chữ người tử tù")) {
+    currentType = "NGHỊ LUẬN VĂN HỌC TRUNG ĐẠI";
+} else if (topic.includes("so sánh") || topic.includes("đối sánh") || topic.includes("liên hệ") || topic.includes("giữa...với...") || topic.includes("tương đồng") || topic.includes("khác biệt")) {
+    currentType = "SO SÁNH VĂN HỌC";
+} else if (topic.includes("cảm nhận") || topic.includes("cảm xúc") || topic.includes("cảm thụ")) {
+    currentType = "CẢM NHẬN VĂN HỌC";
+} else if (topic.includes("phân tích nhân vật") || topic.includes("tính cách") || topic.includes("số phận") || topic.includes("nội tâm")) {
+    currentType = "PHÂN TÍCH NHÂN VẬT";
+} else if (topic.includes("nghệ thuật") || topic.includes("bút pháp") || topic.includes("giọng điệu") || topic.includes("hình ảnh") || topic.includes("biểu tượng")) {
+    currentType = "PHÂN TÍCH NGHỆ THUẬT";
+} else if (topic.includes("mở bài") || topic.includes("kết bài") || topic.includes("dàn ý") || topic.includes("dàn bài")) {
+    currentType = "LẬP DÀN Ý";
+} else {
+    currentType = "PHÂN TÍCH CHUNG";
+}
+
+    // 3. KÍCH HOẠT HIỂN THỊ (Khi mới gõ hoặc đổi dạng bài)
+    if (currentType !== lastDetectedType) {
+        lastDetectedType = currentType;
+
+        // HIỆN KHUNG VÀ BẬT RADAR
+        resultsArea.classList.add('active');
+        overlayStruct.style.display = 'flex';
+        overlayPlan.style.display = 'flex';
+        
+        // Làm sạch nội dung cũ
+        structBox.value = "";
+        planBox.value = "";
+
+        // Hủy bỏ lệnh cũ nếu gõ quá nhanh
+        clearTimeout(analysisTimeout);
+
+        analysisTimeout = setTimeout(() => {
+            // --- XỬ LÝ CẤU TRÚC (STRUCTURE) NÂNG CAO---
+        let structureOutput = "";
+        if (currentType === "NGHỊ LUẬN THƠ") {
+            structureOutput = "🏗️ DÀN Ý NGHỊ LUẬN THƠ (ĐOẠN THƠ/BÀI THƠ)\n" +
+            "1. Mở bài: Giới thiệu tác giả, hoàn cảnh sáng tác, vị trí đoạn thơ.\n" +
+            "2. Thân bài:\n" +
+            "   a. Bao quát: Nội dung chính của đoạn thơ.\n" +
+            "   b. Phân tích chi tiết: Hình ảnh, từ ngữ, nhịp điệu, biện pháp tu từ.\n" +
+            "   c. Đánh giá: Cái hay, cái đẹp, cái riêng của tác giả.\n" +
+            "3. Kết bài: Khái quát giá trị nội dung & nghệ thuật, cảm nhận chung.";
+        } 
+        else if (currentType === "NGHỊ LUẬN TRUYỆN") {
+            structureOutput = "🏗️ DÀN Ý NGHỊ LUẬN TRUYỆN (TÁC PHẨM VĂN XUÔI)\n" +
+            "1. Mở bài: Giới thiệu tác giả, tác phẩm, tình huống truyện.\n" +
+            "2. Thân bài:\n" +
+            "   a. Nhân vật: Ngoại hình, hành động, ngôn ngữ, nội tâm.\n" +
+            "   b. Chủ đề: Giá trị hiện thực (tố cáo) & Giá trị nhân đạo (yêu thương).\n" +
+            "   c. Nghệ thuật: Xây dựng tình huống, nghệ thuật trần thuật.\n" +
+            "3. Kết bài: Ý nghĩa và sức sống của tác phẩm.";
+        } 
+        else if (currentType === "NGHỊ LUẬN XÃ HỘI") {
+            structureOutput = "🏗️ DÀN Ý NGHỊ LUẬN XÃ HỘI (TƯ TƯỞNG/HIỆN TƯỢNG)\n" +
+            "1. Mở bài: Dẫn dắt, nêu vấn đề cần bàn luận.\n" +
+            "2. Thân bài:\n" +
+            "   a. Giải thích: Khái niệm, biểu hiện của vấn đề.\n" +
+            "   b. Phân tích - Chứng minh: Dùng dẫn chứng thực tế, văn học.\n" +
+            "   c. Phản biện: Mở rộng vấn đề, phê phán biểu hiện sai trái.\n" +
+            "   d. Bài học: Nhận thức và hành động.\n" +
+            "3. Kết bài: Khẳng định ý nghĩa vấn đề, bài học cho bản thân.";
+        }
+        else if (currentType === "KỊCH BẢN") {
+            structureOutput = "🏗️ DÀN Ý PHÂN TÍCH KỊCH\n" +
+            "- Mở bài: Giới thiệu tác giả, vở kịch và cảnh trích.\n" +
+            "- Thân bài: Xung đột kịch (Mâu thuẫn cơ bản), hành động kịch, tính cách nhân vật qua lời thoại.\n" +
+            "- Kết bài: Giá trị của vở kịch đối với nền sân khấu.\n" +
+            "(Tác phẩm: Hồn Trương Ba da hàng thịt - Lưu Quang Vũ, Bắc Sơn - Nguyễn Huy Tưởng)";
+        }
+        else if (currentType === "PHONG CÁCH NGHỆ THUẬT") {
+            structureOutput = "🏗️ DÀN Ý NGHỊ LUẬN VỀ PHONG CÁCH / GIAI ĐOẠN\n" +
+            "- Mở bài: Giới thiệu tác giả/giai đoạn văn học.\n" +
+            "- Thân bài: \n  + Đặc điểm nội dung (Đề tài, cảm hứng).\n  + Đặc điểm nghệ thuật (Hình ảnh, giọng điệu, bút pháp).\n  + Phân tích 1-2 tác phẩm tiêu biểu để chứng minh.\n - Kết bài: Vị trí, đóng góp của tác giả/giai đoạn.";
+        }
+        else {
+            structureOutput = "🏗️ DÀN Ý NGHỊ LUẬN VĂN HỌC TỔNG HỢP\n" +
+            "Mở bài: Giới thiệu vấn đề.\n" +
+            "Thân bài: Triển khai các luận điểm logic (Đi từ khái quát đến chi tiết, bám sát ngữ liệu).\n" +
+            "Kết bài: Tổng kết và nâng cao vấn đề.";
+        }
+
+            // ============================================================================
+// ------------------- XỬ LÝ Ý TƯỞNG (IDEAS) - BẢN FULL KHÔNG GIỚI HẠN -------------------
+// ============================================================================
+
+let ideasOutput = "";
+
+// =========================== I. TRUYỆN NGẮN & TIỂU THUYẾT (THPT) ===========================
+
+// --- Chương trình Ngữ văn 11 ---
+if (topic.includes("chí phèo") || topic.includes("nam cao")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHÍ PHÈO - Nam Cao):\n" +
+    "1. Quá trình lưu manh hóa: Anh nông dân hiền lành -> 'con quỷ dữ' làng Vũ Đại.\n" +
+    "2. Bi kịch bị từ chối quyền làm người: Bá Kiến xảo quyệt, Thị Nở phũ phàng.\n" +
+    "3. Bát cháo hành: Giây phút thức tỉnh nhân tính thiêng liêng nhất.\n" +
+    "4. Cái chết của Chí Phèo: Tự sát - tiếng kêu tuyệt vọng của con người.\n" +
+    "5. Hình tượng Thị Nở: 'Xấu người nhưng tốt nết' - nhân vật mở khóa.\n" +
+    "6. Nghệ thuật: Xây dựng nhân vật điển hình, bút pháp phân tích tâm lý sắc sảo.";
+}
+else if (topic.includes("vợ nhặt") || topic.includes("kim lân")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (VỢ NHẶT - Kim Lân):\n" +
+    "1. Tình huống truyện độc đáo: Nhặt vợ giữa nạn đói 1945.\n" +
+    "2. Tràng: Từ bỡ ngỡ -> vui sướng -> có trách nhiệm.\n" +
+    "3. Người vợ nhặt: Từ cam chịu -> hy vọng.\n" +
+    "4. Bà cụ Tứ: Tình mẫu tử thiêng liêng, sự bao dung.\n" +
+    "5. Biểu tượng: Bát bánh đúc (ấm áp), lá cờ đỏ (tương lai).\n" +
+    "6. Chủ đề: Khát vọng sống, tình người trong hoạn nạn.";
+}
+else if (topic.includes("lão hạc") || (topic.includes("nam cao") && topic.includes("lão"))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (LÃO HẠC - Nam Cao):\n" +
+    "1. Số phận bi thảm: Người nông dân nghèo khổ, cô độc.\n" +
+    "2. Nhân cách cao đẹp: Yêu thương con, lòng tự trọng.\n" +
+    "3. Cái chết đau đớn bằng bả chó: Sự lựa chọn tột cùng.\n" +
+    "4. Cái nhìn nhân đạo: Dù nghèo vẫn giữ thiên lương.\n" +
+    "5. Nghệ thuật: Kể chuyện giọng đối thoại, triết lý thấm thía.";
+}
+else if (topic.includes("hai đứa trẻ") || topic.includes("thạch lam")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (HAI ĐỨA TRẺ - Thạch Lam):\n" +
+    "1. Bức tranh phố huyện lúc chiều tàn: Tàn tạ, nghèo nàn.\n" +
+    "2. Tâm trạng Liên và An: Nỗi buồn, cô đơn, khát khao.\n" +
+    "3. Hình ảnh chuyến tàu: Ánh sáng le lói giữa đêm tối.\n" +
+    "4. Chủ đề: Sự xót thương cho kiếp người nhỏ bé, bỏ quên.\n" +
+    "5. Nghệ thuật: Truyện không có cốt truyện, giàu chất thơ, lối văn nhẹ nhàng.";
+}
+else if (topic.includes("chữ người tử tù") || topic.includes("nguyễn tuân")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHỮ NGƯỜI TỬ TÙ - Nguyễn Tuân):\n" +
+    "1. Cảnh cho chữ: Độc đáo, linh thiêng, kỳ vĩ.\n" +
+    "2. Nhân vật Huấn Cao: Tài hoa, khí phách, thiên lương.\n" +
+    "3. Viên quản ngục: Tấm lòng biệt nhỡn liên tài.\n" +
+    "4. Hai mảnh đời gặp nhau: Vượt lên ranh giới thiện - ác.\n" +
+    "5. Chủ đề: Cái đẹp và cái thiện chiến thắng cái ác.";
+}
+else if (topic.includes("đời thừa") || topic.includes("nam cao")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐỜI THỪA - Nam Cao):\n" +
+    "1. Nỗi đau của trí thức nghèo: Hộ - tài năng bị chôn vùi.\n" +
+    "2. Mâu thuẫn gia đình: Nghèo khó dìm chết tình yêu, tài năng.\n" +
+    "3. Triết lý 'nghệ thuật vị nhân sinh': Có ích cho cuộc đời.\n" +
+    "4. Bi kịch: Khao khát sống đẹp nhưng không thể.";
+}
+else if (topic.includes("tắt đèn") || topic.includes("ngô tất tố")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TẮT ĐÈN - Ngô Tất Tố):\n" +
+    "1. Bức tranh nông thôn Việt Nam trước Cách mạng: Khủng bố, sưu thuế.\n" +
+    "2. Nhân vật chị Dậu: Vừa giàu tình thương, vừa có tinh thần phản kháng.\n" +
+    "3. Hình ảnh cai lệ, người nhà lý trưởng: Bộ mặt tàn bạo.\n" +
+    "4. Giá trị hiện thực và nhân đạo sâu sắc.\n" +
+    "5. So sánh với Chí Phèo: Cùng hiện thực nhưng khác bút pháp.";
+}
+else if (topic.includes("số đỏ") || topic.includes("vũ trọng phụng")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SỐ ĐỎ - Vũ Trọng Phụng):\n" +
+    "1. Nhân vật Xuân tóc đỏ: Sự lên ngôi của kẻ cơ hội, vô học.\n" +
+    "2. Xã hội thượng lưu Hà thành: Xấu xa, kệch cỡm, lố lăng.\n" +
+    "3. Tinh thần trào phúng chua cay: Cười ra nước mắt.\n" +
+    "4. Nghệ thuật: Bút pháp phóng sự sắc sảo, hài hước độc đáo.";
+}
+else if (topic.includes("gió lạnh đầu mùa") || topic.includes("thạch lam")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (GIÓ LẠNH ĐẦU MÙA - Thạch Lam):\n" +
+    "1. Khung cảnh mùa đông Hà Nội xưa.\n" +
+    "2. Tình thương chị em Sơn dành cho Hiên.\n" +
+    "3. Lòng nhân hậu, dạy con biết cho đi.\n" +
+    "4. Sự ấm áp giữa đời thường.";
+}
+
+// --- Chương trình Ngữ văn 12 ---
+else if (topic.includes("vợ chồng a phủ") || topic.includes("tô hoài") || topic.includes("a phủ")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (VỢ CHỒNG A PHỦ - Tô Hoài):\n" +
+    "1. Cảnh ngộ đau khổ của Mị, A Phủ dưới ách thống lý Pá Tra.\n" +
+    "2. Sức sống tiềm tàng: Đêm tình mùa xuân.\n" +
+    "3. Hành động cắt dây trói cứu A Phủ.\n" +
+    "4. Hình ảnh cái xác chết đuối và tiếng sáo gọi bạn tình.\n" +
+    "5. Chủ đề: Khẳng định quyền sống và khát vọng tự do của con người.";
+}
+else if (topic.includes("rừng xà nu") || topic.includes("nguyễn trung thành")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (RỪNG XÀ NU - Nguyễn Trung Thành):\n" +
+    "1. Hình tượng rừng xà nu: Biểu tượng sức sống bất diệt, chịu thương chịu khó.\n" +
+    "2. Nhân vật Tnú: Anh hùng huyền thoại Tây Nguyên.\n" +
+    "3. Cảnh đốt mười đầu ngón tay: Nỗi đau khắc cốt ghi xương.\n" +
+    "4. 'Khoét mắt kẻ thù': Không còn con đường nào khác.\n" +
+    "5. Đề tài dân tộc, chất sử thi và cảm hứng lãng mạn cách mạng.";
+}
+else if (topic.includes("chiếc thuyền ngoài xa") || topic.includes("nguyễn minh châu")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHIẾC THUYỀN NGOÀI XA - Nguyễn Minh Châu):\n" +
+    "1. Khoảnh khắc 'toàn thiện toàn mỹ' của Phùng.\n" +
+    "2. Sự thật sau bức ảnh: Bạo lực gia đình, nỗi đau người dân làng chài.\n" +
+    "3. Nhân vật người đàn bà hàng chài: Tần tảo, cam chịu, sâu sắc.\n" +
+    "4. Triết lý nghệ thuật: Không thể nhìn đời qua một lăng kính.\n" +
+    "5. Đứa bé đánh bố: Nghịch cảnh trớ trêu.";
+}
+else if (topic.includes("những đứa con trong gia đình") || topic.includes("nguyễn thi")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (NHỮNG ĐỨA CON TRONG GIA ĐÌNH - Nguyễn Thi):\n" +
+    "1. Chủ nghĩa anh hùng cách mạng: Truyền thống từ đời này sang đời khác.\n" +
+    "2. Nhân vật Việt và Chiến: Hồn nhiên, gan góc, yêu nước.\n" +
+    "3. Cây súng và cuốn sổ: Biểu tượng truyền thống.\n" +
+    "4. Giọng văn Nam Bộ: Đậm chất sông nước, hào sảng.";
+}
+else if (topic.includes("đất rừng phương nam") || topic.includes("đoàn giỏi")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐẤT RỪNG PHƯƠNG NAM - Đoàn Giỏi):\n" +
+    "1. Thiên nhiên Nam Bộ: Hoang dại, phóng khoáng.\n" +
+    "2. Hình ảnh con người: Anh hùng hào sảng (chú Võ Tòng, lão Ba Ngù).\n" +
+    "3. Bé An: Hành trình trưởng thành cùng đất nước.\n" +
+    "4. Chất Nam Bộ: Ngôn ngữ địa phương, văn hóa đặc trưng.";
+}
+else if (topic.includes("ai đã đặt tên cho dòng sông") || topic.includes("hoàng phủ ngọc tường")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (AI ĐÃ ĐẶT TÊN CHO DÒNG SÔNG - Hoàng Phủ Ngọc Tường):\n" +
+    "1. Sông Hương ở thượng nguồn: Dữ dội, mạnh mẽ.\n" +
+    "2. Sông Hương khi về đồng bằng: Dịu dàng, trữ tình.\n" +
+    "3. Sông Hương với lịch sử: Chứng nhân trầm tích.\n" +
+    "4. Tình yêu xứ Huế: Đậm đà chất triết lý, thi ca.";
+}
+
+// =========================== II. TRUYỆN (THCS - LỚP 6,7,8,9) ===========================
+
+// --- Lớp 6 ---
+else if (topic.includes("dế mèn phiêu lưu ký") || (topic.includes("tô hoài") && topic.includes("dế"))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (DẾ MÈN PHIÊU LƯU KÝ - Tô Hoài):\n" +
+    "1. Dế Mèn: Kiêu căng, tự phụ đến thấm thía bài học đầu đời.\n" +
+    "2. Cái chết đau lòng của Dế Choắt: Hậu quả của sự ngông cuồng.\n" +
+    "3. Sự giãi bày của Dế Mèn với chị Cốc.\n" +
+    "4. Giá trị nhân văn: Bài học về tình bạn, lòng vị tha và sự khiêm tốn.";
+}
+else if (topic.includes("bài học đường đời đầu tiên") || topic.includes("tô hoài")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (BÀI HỌC ĐƯỜNG ĐỜI ĐẦU TIÊN - Tô Hoài):\n" +
+    "1. Vẻ đẹp cường tráng của Dế Mèn.\n" +
+    "2. Tính cách xấu: Kiêu căng, hung hăng.\n" +
+    "3. Hậu quả: Dế Choắt chết oan, Dế Mèn ân hận.\n" +
+    "4. Ở đời không được ngông cuồng, phải biết suy nghĩ.";
+}
+else if (topic.includes("sông nước cà mau") || topic.includes("đoàn giỏi")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SÔNG NƯỚC CÀ MAU - Đoàn Giỏi):\n" +
+    "1. Cảnh quan thiên nhiên: Sông ngòi chằng chịt, rừng đước trùng điệp.\n" +
+    "2. Chợ nổi Cà Mau: Tấp nập, độc đáo.\n" +
+    "3. Con người: Mộc mạc, thân thiện.\n" +
+    "4. Nét độc đáo văn hóa miền Tây sông nước.";
+}
+else if (topic.includes("bức tranh của em gái tôi") || topic.includes("tạ duy anh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (BỨC TRANH CỦA EM GÁI TÔI - Tạ Duy Anh):\n" +
+    "1. Tài năng hội họa của Kiều Phương.\n" +
+    "2. Sự ghen ghét đố kỵ của người anh.\n" +
+    "3. Bức tranh 'Anh trai tôi': Thức tỉnh lòng nhân ái.\n" +
+    "4. Chủ đề: Tình cảm trong sáng, lòng nhân hậu có thể chiến thắng lòng ích kỷ.";
+}
+else if (topic.includes("cô tô") || topic.includes("nguyễn tuân")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CÔ TÔ - Nguyễn Tuân):\n" +
+    "1. Cảnh mặt trời mọc trên biển: Đẹp tráng lệ, hùng vĩ.\n" +
+    "2. Cảnh sinh hoạt buổi sáng: Bình dị, ấm cúng.\n" +
+    "3. Tình yêu thiên nhiên, yêu đất nước.\n" +
+    "4. Ngôn ngữ giàu hình ảnh, lối ví von thú vị.";
+}
+else if (topic.includes("cây tre việt nam") || topic.includes("thép mới")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CÂY TRE VIỆT NAM - Thép Mới):\n" +
+    "1. Cây tre - người bạn thân của nông dân.\n" +
+    "2. Phẩm chất tre: Ngay thẳng, thủy chung, can đảm.\n" +
+    "3. Tre sát cánh trong lao động và chiến đấu.\n" +
+    "4. Tre là biểu tượng của dân tộc Việt Nam.";
+}
+else if (topic.includes("buổi học cuối cùng") || topic.includes("đô-đê")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (BUỔI HỌC CUỐI CÙNG - Đô-đê):\n" +
+    "1. Tình yêu tiếng Pháp: Ngôn ngữ là chìa khóa tự do.\n" +
+    "2. Sự ân hận của cậu bé Phrăng.\n" +
+    "3. Thầy Ha-men: Nhân cách cao đẹp, yêu nghề.\n" +
+    "4. Ý nghĩa: Yêu quý và giữ gìn tiếng mẹ đẻ.";
+
+// --- Lớp 7 ---
+}
+else if (topic.includes("tinh thần yêu nước của nhân dân ta") || topic.includes("hồ chí minh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TINH THẦN YÊU NƯỚC CỦA NHÂN DÂN TA - Hồ Chí Minh):\n" +
+    "1. Tinh thần yêu nước là truyền thống quý báu.\n" +
+    "2. Biểu hiện: Trong quá khứ và hiện tại (kháng chiến).\n" +
+    "3. Nghệ thuật lập luận: So sánh, dẫn chứng xác thực, giàu sức thuyết phục.";
+}
+else if (topic.includes("sống chết mặc bay") || topic.includes("phạm duy tốn")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SỐNG CHẾT MẶC BAY - Phạm Duy Tốn):\n" +
+    "1. Chân dung tên quan phụ mẫu: Vô trách nhiệm, bạo tàn.\n" +
+    "2. Cảnh dân chúng vật lộn với lũ lụt.\n" +
+    "3. Hành động đánh tổ tôm giữa đê vỡ.\n" +
+    "4. Giá trị tố cáo xã hội thực dân phong kiến.";
+}
+else if (topic.includes("ca huế trên sông hương") || topic.includes("hà ánh minh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CA HUẾ TRÊN SÔNG HƯƠNG - Hà Ánh Minh):\n" +
+    "1. Vẻ đẹp ca Huế: Trang trọng, thanh lịch.\n" +
+    "2. Nhạc công và ca công: Tài hoa, tâm huyết.\n" +
+    "3. Sông Hương - điểm hẹn của du lịch văn hóa.\n" +
+    "4. Giữ gìn bản sắc dân tộc qua ca Huế.";
+}
+
+// --- Lớp 8 ---
+else if (topic.includes("lão hạc") && !topic.includes("chí phèo")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (LÃO HẠC - Nam Cao):\n" +
+    "1. Lão Hạc một mình, nghèo khổ, già yếu.\n" +
+    "2. Tình thương con vô bờ bến.\n" +
+    "3. Lựa chọn cái chết để giữ mảnh vườn cho con.\n" +
+    "4. Cái nhìn nhân đạo của Nam Cao:\n" +
+    "   'Một người đàn ông đau khổ vì lòng tự trọng'.";
+}
+else if (topic.includes("trong lòng mẹ") || (topic.includes("nguyên hồng") && (topic.includes("mẹ") || topic.includes("lòng")))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TRONG LÒNG MẸ - Nguyên Hồng):\n" +
+    "1. Bé Hồng: Tuổi thơ đau thương, thiếu thốn tình mẹ.\n" +
+    "2. Những cực hình của bà cô: Độc ác, giả dối.\n" +
+    "3. Giây phút gặp lại mẹ: Vỡ òa hạnh phúc.\n" +
+    "4. Cái nhìn yêu thương, trân trọng tình mẫu tử thiêng liêng.";
+}
+else if (topic.includes("tức nước vỡ bờ") || (topic.includes("tắt đèn") && topic.includes("chị dậu"))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TỨC NƯỚC VỠ BỜ - trích Tắt đèn):\n" +
+    "1. Tình cảnh chị Dậu: Chạy vạy, van xin.\n" +
+    "2. Hành vi càn quấy của cai lệ và người nhà lý trưởng.\n" +
+    "3. Phản kháng mãnh liệt: 'Chồng tôi đau ốm, các ông không được phép hành hạ'.\n" +
+    "4. Quy luật: Có áp bức có đấu tranh.";
+}
+else if (topic.includes("cô bé bán diêm") || topic.includes("an-đéc-xen")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CÔ BÉ BÁN DIÊM - An-đéc-xen):\n" +
+    "1. Nỗi khổ của cô bé mồ côi ngày đầu năm mới.\n" +
+    "2. Những mộng tưởng qua que diêm: Lò sưởi, bàn ăn, cây thông và bà.\n" +
+    "3. Cái chết đông lạnh nhưng thanh thản.\n" +
+    "4. Lòng cảm thông, xót xa cho những số phận bất hạnh.";
+}
+else if (topic.includes("đánh nhau với cối xay gió") || topic.includes("xéc-van-tét")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐÁNH NHAU VỚI CỐI XAY GIÓ - Xéc-van-tét):\n" +
+    "1. Đôn Ki-hô-tê: Mộng mơ, hão huyền nhưng cao thượng.\n" +
+    "2. Xan-chô Pan-xa: Thực tế, tỉnh táo, chất phác.\n" +
+    "3. Hai nhân vật tương phản nhưng bổ sung.\n" +
+    "4. Tiếng cười mà không mỉa mai, yêu thương con người.";
+}
+
+// --- Lớp 9 ---
+else if (topic.includes("làng") || topic.includes("kim lân") && topic.includes("làng")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (LÀNG - Kim Lân):\n" +
+    "1. Ông Hai: Yêu làng, yêu nước sâu sắc.\n" +
+    "2. Tình huống: Tin làng theo giặc - bế tắc, đau đớn.\n" +
+    "3. Diễn biến tâm lý: Tự hào -> đau khổ -> vỡ òa.\n" +
+    "4. Chủ nghĩa yêu nước hòa trong tình làng quê.";
+}
+else if (topic.includes("chiếc lược ngà") || topic.includes("nguyễn quang sáng")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHIẾC LƯỢC NGÀ - Nguyễn Quang Sáng):\n" +
+    "1. Tình cha con ông Sáu và bé Thu.\n" +
+    "2. Sự ương ngạnh của bé Thu vì không nhận ba.\n" +
+    "3. Giây phút nhận ra ba: Tiếng gọi 'Ba!' xé lòng.\n" +
+    "4. Cây lược ngà: Vật kỷ niệm thiêng liêng, tình phụ tử bất tử.";
+}
+else if (topic.includes("ánh trăng") || topic.includes("nguyễn duy")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ÁNH TRĂNG - Nguyễn Duy):\n" +
+    "1. Hình ảnh vầng trăng: Thiên nhiên, quá khứ nghĩa tình.\n" +
+    "2. Sự thay đổi của con người khi sống ở thành phố.\n" +
+    "3. Giây phút bừng tỉnh: Trăng tròn vành vạnh, im lặng nhắc nhở.\n" +
+    "4. Lời nhắn: Đừng lãng quên quá khứ, hãy sống ân nghĩa thủy chung.";
+}
+else if (topic.includes("bếp lửa") || topic.includes("bằng việt")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (BẾP LỬA - Bằng Việt):\n" +
+    "1. Hồi tưởng về bà, về tuổi thơ bên bếp lửa.\n" +
+    "2. Hình ảnh người bà: Tảo tần, hy sinh, đức hi sinh.\n" +
+    "3. 'Bếp lửa' ấm áp: Biểu tượng tình yêu thương, gia đình.\n" +
+    "4. Nhắn nhủ: Giữ gìn ngọn lửa truyền thống.";
+}
+else if (topic.includes("đồng chí") || topic.includes("chính hữu")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐỒNG CHÍ - Chính Hữu):\n" +
+    "1. Cơ sở tình đồng chí: Chung cảnh ngộ, lý tưởng.\n" +
+    "2. Biểu tượng đẹp: Đêm rét, chân lấm, đầu súng trăng treo.\n" +
+    "3. Lời thơ mộc mạc, giản dị.\n" +
+    "4. Tình đồng đội thiêng liêng trong kháng chiến.";
+}
+else if (topic.includes("bài thơ về tiểu đội xe không kính") || topic.includes("phạm tiến duật")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (BÀI THƠ VỀ TIỂU ĐỘI XE KHÔNG KÍNH - Phạm Tiến Duật):\n" +
+    "1. Hình ảnh xe không kính: Phá cách, hiện thực chiến tranh.\n" +
+    "2. Chất lính trẻ: Ngang tàng, hài hước, dũng cảm.\n" +
+    "3. Tinh thần lạc quan, sẵn sàng chiến đấu.\n" +
+    "4. Giọng thẻ trẻ trung, khỏe khoắn, đậm chất thơ chiến sĩ.";
+}
+else if (topic.includes("lặng lẽ sa pa") || topic.includes("nguyễn thành long")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (LẶNG LẼ SA PA - Nguyễn Thành Long):\n" +
+    "1. Vẻ đẹp lặng lẽ của Sa Pa.\n" +
+    "2. Người thanh niên: Sống đẹp, cống hiến thầm lặng.\n" +
+    "3. Các nhân vật khác: Ông kỹ sư, bác lái xe.\n" +
+    "4. Chủ đề: Sống có ích, yêu lao động.";
+}
+else if (topic.includes("những ngôi sao xa xôi") || topic.includes("lê minh khuê")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (NHỮNG NGÔI SAO XA XÔI - Lê Minh Khuê):\n" +
+    "1. Ba cô gái thanh niên xung phong trên cao điểm.\n" +
+    "2. Phương Định: Hồn nhiên, dũng cảm, giàu tình cảm.\n" +
+    "3. Công việc nguy hiểm, đối mặt với cái chết hàng ngày.\n" +
+    "4. Tình đồng đội, khát vọng sống và yêu thương.";
+}
+else if (topic.includes("nói với con") || topic.includes("y phương")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (NÓI VỚI CON - Y Phương):\n" +
+    "1. Tình yêu thương của cha dành cho con.\n" +
+    "2. Vẻ đẹp người đồng mình: Mộc mạc, gắn bó, can đảm.\n" +
+    "3. Lời nhắn nhủ: Sống có tình nghĩa, có bản lĩnh.\n" +
+    "4. Văn hóa dân tộc: Giản dị, thấm thía.";
+}
+else if (topic.includes("mùa xuân nho nhỏ") || topic.includes("thanh hải")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (MÙA XUÂN NHO NHỎ - Thanh Hải):\n" +
+    "1. Cảm xúc trước mùa xuân thiên nhiên, đất nước.\n" +
+    "2. Khát vọng hóa thân: Làm con chim hót, một cành hoa.\n" +
+    "3. Lẽ sống đẹp, cống hiến cho đời.\n" +
+    "4. Nghệ thuật: Thể thơ 5 chữ, nhạc điệu trong sáng.";
+}
+else if (topic.includes("viếng lăng bác") || topic.includes("viễn phương")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (VIẾNG LĂNG BÁC - Viễn Phương):\n" +
+    "1. Cảm xúc của nhà thơ khi vào lăng Bác.\n" +
+    "2. Hình ảnh Bác: Ngủ giấc ngủ bình yên, vầng trăng sáng.\n" +
+    "3. Nỗi xót đau, tiếc nhớ, tự hào.\n" +
+    "4. Ước nguyện: Làm con chim hót, đóa hoa, cây tre trung hiếu.";
+}
+else if (topic.includes("sang thu") || topic.includes("hữu thỉnh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SANG THU - Hữu Thỉnh):\n" +
+    "1. Tín hiệu thu sang: Hương ổi, gió se, sương chùng chình.\n" +
+    "2. Cảm nhận thiên nhiên tinh tế.\n" +
+    "3. Từ mùa thu thiên nhiên suy ngẫm về mùa thu đời người.\n" +
+    "4. Nhân sinh quan: Chín chắn, từng trải.";
+}
+
+// =========================== III. THƠ CA (THPT - LỚP 11 + 12) ===========================
+
+// --- Thơ lớp 11 ---
+else if (topic.includes("tây tiến") || topic.includes("quang dũng")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TÂY TIẾN - Quang Dũng):\n" +
+    "1. Thiên nhiên miền Tây hùng vĩ, dữ dội, hoang sơ.\n" +
+    "2. Người lính Tây Tiến: Hào hoa, lãng mạn, bi tráng.\n" +
+    "3. Nỗi nhớ và tình đồng đội thiêng liêng.\n" +
+    "4. Sự kết hợp giữa chất thơ và chất nhạc, giữa hiện thực và lãng mạn.";
+}
+else if (topic.includes("việt bắc") || topic.includes("tố hữu")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (VIỆT BẮC - Tố Hữu):\n" +
+    "1. Tình cảm cách mạng gắn bó sâu nặng.\n" +
+    "2. Vẻ đẹp thiên nhiên, con người Việt Bắc.\n" +
+    "3. Nghệ thuật đậm đà tính dân tộc: Thể lục bát, đối đáp ca dao.\n" +
+    "4. Niềm tin tưởng vào thắng lợi của cách mạng, kháng chiến.";
+}
+else if (topic.includes("đất nước") || (topic.includes("nguyễn đình thi") && !topic.includes("đất nước - nguyễn khoa"))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐẤT NƯỚC - Nguyễn Đình Thi):\n" +
+    "1. Mùa thu Hà Nội năm 1945 - không khí đất nước trỗi dậy.\n" +
+    "2. Hình ảnh đất nước đau thương nhưng anh dũng.\n" +
+    "3. Cảm hứng sử thi và cảm xúc lãng mạn.\n" +
+    "4. Giọng thơ sôi nổi, trữ tình - chính trị.";
+}
+else if (topic.includes("sóng") || topic.includes("xuân quỳnh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SÓNG - Xuân Quỳnh):\n" +
+    "1. Hình tượng sóng - em: Khát vọng tình yêu mãnh liệt.\n" +
+    "2. Những cung bậc cảm xúc: Nỗi nhớ, lòng chung thủy, niềm tin.\n" +
+    "3. Quan niệm tình yêu hiện đại: Vừa sôi nổi vừa sâu lắng.\n" +
+    "4. Nghệ thuật: Thể thơ 5 chữ, nhịp điệu linh hoạt.";
+}
+else if (topic.includes("đò lèn") || topic.includes("nguyễn duy")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐÒ LÈN - Nguyễn Duy):\n" +
+    "1. Tình cảm với bà ngoại - người đã nuôi dưỡng tâm hồn.\n" +
+    "2. Bà: Tần tảo, hy sinh, giản dị.\n" +
+    "3. Đối lập giữa 'người bình thường' và 'siêu nhân lịch sử'.\n" +
+    "4. Chất trữ tình và chất hiện thực nghiệt ngã.";
+}
+else if (topic.includes("vội vàng") || topic.includes("xuân diệu")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (VỘI VÀNG - Xuân Diệu):\n" +
+    "1. Quan niệm về thời gian: 'Xuân đương tới, nghĩa là xuân đương qua'.\n" +
+    "2. Tình yêu cuộc sống, ham sống mãnh liệt.\n" +
+    "3. Cái tôi trữ tình say đắm, vội vã.\n" +
+    "4. Nghệ thuật: So sánh mới lạ, câu thơ tự do, nhạc tính.";
+}
+else if (topic.includes("tràng giang") || topic.includes("huy cận")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TRÀNG GIANG - Huy Cận):\n" +
+    "1. Khung cảnh sông nước mênh mông, buồn vắng.\n" +
+    "2. Nỗi cô đơn, lạc lõng của cái tôi thơ Mới.\n" +
+    "3. Nghệ thuật tạo hình, từ láy, đối lập.\n" +
+    "4. Ẩn dụ 'tràng giang' - nỗi sầu vũ trụ, nỗi sầu nhân sinh.";
+}
+else if (topic.includes("đây thôn vĩ dạ") || topic.includes("hàn mặc tử")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐÂY THÔN VĨ DẠ - Hàn Mặc Tử):\n" +
+    "1. Bức tranh xứ Huế thơ mộng, thanh khiết.\n" +
+    "2. Nỗi đau, mặc cảm của thi nhân: Khát sống, khát yêu.\n" +
+    "3. Nghệ thuật lãng mạn, pha trộn thực - ảo.\n" +
+    "4. Câu hỏi tu từ: Day dứt, nhức nhối.";
+}
+else if (topic.includes("tương tư") || topic.includes("nguyễn bính")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (TƯƠNG TƯ - Nguyễn Bính):\n" +
+    "1. Tình yêu quê mùa, giản dị mà sâu sắc.\n" +
+    "2. Nỗi lòng chàng trai đang yêu: Thương nhớ, trông ngóng.\n" +
+    "3. Nghệ thuật: Thể thơ lục bát, giọng thơ 'chân quê'.\n" +
+    "4. Vẻ đẹp của tình yêu làng quê thời xưa.";
+}
+else if (topic.includes("chiều xuân") || topic.includes("anh thơ")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHIỀU XUÂN - Anh Thơ):\n" +
+    "1. Bức tranh làng quê thanh bình, tĩnh lặng.\n" +
+    "2. Nghệ thuật tả cảnh tinh tế, đường nét, màu sắc.\n" +
+    "3. Hình ảnh đời sống bình dị.\n" +
+    "4. Nỗi buồn man mác, thi vị.";
+}
+
+// --- Thơ lớp 12 ---
+else if (topic.includes("đất nước") && (topic.includes("nguyễn khoa") || topic.includes("nguyễn khoa điềm"))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (ĐẤT NƯỚC - Nguyễn Khoa Điềm - trích Mặt đường khát vọng):\n" +
+    "1. Cảm nhận về đất nước từ văn hóa, lịch sử, đời sống.\n" +
+    "2. Đất nước của nhân dân: Gần gũi, bình dị mà thiêng liêng.\n" +
+    "3. Tư tưởng 'Đất nước của Nhân dân': Ca dao, phong tục, truyền thuyết.\n" +
+    "4. Chất trữ tình - chính luận sâu sắc.\n" +
+    "5. Thể thơ tự do, giọng điệu truyền cảm.";
+}
+else if (topic.includes("sóng") && !topic.includes("xuân quỳnh lớp 12")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SÓNG - Xuân Quỳnh):\n" +
+    "1. Khát vọng tình yêu: Sôi nổi, chân thành.\n" +
+    "2. Nỗi nhớ: Cồn cào, tràn đầy không gian thời gian.\n" +
+    "3. Lòng thủy chung: 'Dẫu xuôi về phương bắc, dẫu ngược về phương nam'.\n" +
+    "4. Thể thơ năm chữ, hình ảnh 'sóng' và 'em' hòa quyện.";
+}
+
+// =========================== IV. KỊCH, KÝ, BÚT KÝ ===========================
+
+else if (topic.includes("hồn trương ba da hàng thịt") || topic.includes("lưu quang vũ")) {
+    ideasOutput = "📌 GỢI Ý PHÂN TÍCH KỊCH (HỒN TRƯƠNG BA DA HÀNG THỊT - Lưu Quang Vũ):\n" +
+    "1. Xung đột kịch: Giữa linh hồn (Trương Ba) và thể xác (anh hàng thịt).\n" +
+    "2. Nhân vật: Trương Ba (khát vọng sống đẹp), Đế Thích (sự áp đặt).\n" +
+    "3. Bi kịch: Sống nhờ, sống gửi, đánh mất chính mình.\n" +
+    "4. Chủ đề triết lý: Được làm mình là hạnh phúc lớn nhất.";
+}
+else if (topic.includes("bắc sơn") || topic.includes("nguyễn huy tưởng")) {
+    ideasOutput = "📌 GỢI Ý PHÂN TÍCH KỊCH (BẮC SƠN - Nguyễn Huy Tưởng):\n" +
+    "1. Mâu thuẫn lịch sử: Cuộc khởi nghĩa Bắc Sơn.\n" +
+    "2. Nhân vật Thơm: Sự trưởng thành cách mạng.\n" +
+    "3. Hành động kịch: Căng thẳng, kịch tính.\n" +
+    "4. Khẳng định tinh thần yêu nước, bất khuất.";
+}
+else if (topic.includes("người lái đò sông đà") || topic.includes("sông đà") || (topic.includes("nguyễn tuân") && !topic.includes("chữ người tử tù"))) {
+    ideasOutput = "📌 GỢI Ý PHÂN TÍCH BÚT KÝ (NGƯỜI LÁI ĐÒ SÔNG ĐÀ - Nguyễn Tuân):\n" +
+    "1. Sông Đà hung bạo: Trùng vi thạch trận, thác nước gầm thét.\n" +
+    "2. Sông Đà trữ tình: Màu nước, bờ bãi, 'cố nhân'.\n" +
+    "3. Ông lái đò: Tài hoa, dũng cảm, am hiểu sống nước.\n" +
+    "4. Chủ nghĩa anh hùng lao động trong thời bình.";
+}
+
+// =========================== V. NGHỊ LUẬN XÃ HỘI ===========================
+
+else if (topic.includes("tuổi trẻ") || topic.includes("thanh niên") || topic.includes("thế hệ trẻ")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (VAI TRÒ CỦA TUỔI TRẺ):\n" +
+    "I. Mở bài: Tuổi trẻ là mùa xuân của xã hội.\n" +
+    "II. Thân bài:\n" +
+    "1. Giải thích: Tuổi trẻ có sức khỏe, nhiệt huyết, ước mơ.\n" +
+    "2. Thực trạng: Nhiều bạn trẻ sống thụ động, không mục đích.\n" +
+    "3. Phản biện: Không thể đổ lỗi cho hoàn cảnh.\n" +
+    "4. Bài học: Học tập, rèn luyện, cống hiến.\n" +
+    "III. Kết bài: Tuổi trẻ hãy sống có ích, khẳng định bản thân.";
+}
+else if (topic.includes("tình mẫu tử") || topic.includes("tình mẹ") || topic.includes("mẹ")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (TÌNH MẪU TỬ):\n" +
+    "I. Mở bài: Tình mẹ là tình cảm thiêng liêng nhất.\n" +
+    "II. Thân bài:\n" +
+    "1. Biểu hiện: Sự hy sinh thầm lặng, bảo vệ, yêu thương vô bờ.\n" +
+    "2. Vai trò: Là chỗ dựa vững chắc, động lực sống.\n" +
+    "3. Phản đề: Những người con vô ơn, bất hiếu.\n" +
+    "4. Hành động: Yêu thương mẹ mỗi ngày.\n" +
+    "III. Kết bài: Hạnh phúc khi còn mẹ.";
+}
+else if (topic.includes("lối sống ích kỷ") || topic.includes("ích kỷ")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (PHÊ PHÁN LỐI SỐNG ÍCH KỶ):\n" +
+    "I. Mở bài: Ích kỷ là thói xấu phổ biến.\n" +
+    "II. Thân bài:\n" +
+    "1. Nhận diện: Chỉ nghĩ đến lợi ích cá nhân, vô cảm.\n" +
+    "2. Tác hại: Phá vỡ các mối quan hệ, cản trở phát triển chung.\n" +
+    "3. Nguyên nhân: Do giáo dục gia đình, xã hội.\n" +
+    "4. Lời khuyên: Sống vị tha, biết chia sẻ.\n" +
+    "III. Kết bài: Loại bỏ lối sống ích kỷ để xây dựng xã hội tốt đẹp.";
+}
+else if (topic.includes("tình yêu quê hương") || topic.includes("lòng yêu nước") || topic.includes("tổ quốc")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (LÒNG YÊU NƯỚC):\n" +
+    "I. Mở bài: Yêu nước truyền thống quý báu.\n" +
+    "II. Thân bài:\n" +
+    "1. Biểu hiện: Yêu thiên nhiên, di sản, con người, bảo vệ Tổ quốc.\n" +
+    "2. Vai trò: Sức mạnh vô địch, động lực phát triển.\n" +
+    "3. Phản biện: Phê phán thái độ thờ ơ, phản bội.\n" +
+    "4. Hành động: Học tốt, lao động, giữ gìn văn hóa.\n" +
+    "III. Kết bài: Mỗi người là một chiến sĩ yêu nước.";
+}
+else if (topic.includes("tinh thần tự học") || topic.includes("tự học")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (TINH THẦN TỰ HỌC):\n" +
+    "I. Mở bài: Tự học là chìa khóa thành công.\n" +
+    "II. Thân bài:\n" +
+    "1. Giải thích: Tự học là chủ động tìm tòi, không thụ động.\n" +
+    "2. Lợi ích: Giúp hiểu sâu, nhớ lâu, phát huy năng lực.\n" +
+    "3. Dẫn chứng: Hồ Chí Minh, ông Đặng Lê Nguyên Vũ.\n" +
+    "4. Phương pháp: Có kế hoạch, kiên trì, tự kiểm tra.\n" +
+    "III. Kết bài: Tự học là con đường dẫn đến vinh quang.";
+}
+else if (topic.includes("bạo lực học đường")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (BẠO LỰC HỌC ĐƯỜNG):\n" +
+    "I. Mở bài: Bạo lực học đường - vấn đề nhức nhối.\n" +
+    "II. Thân bài:\n" +
+    "1. Thực trạng: Đánh nhau, lăng mạ, khủng bố tinh thần.\n" +
+    "2. Nguyên nhân: Thiếu kỹ năng sống, học tập sai lệch.\n" +
+    "3. Hậu quả: Tổn thương thể xác và tinh thần.\n" +
+    "4. Giải pháp: Gia đình - nhà trường đồng hành, giáo dục kỹ năng.\n" +
+    "III. Kết bài: Xây dựng môi trường học đường lành mạnh.";
+}
+else if (topic.includes("tình bạn") || topic.includes("bạn bè")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (TÌNH BẠN):\n" +
+    "I. Mở bài: Bạn bè là một phần quan trọng.\n" +
+    "II. Thân bài:\n" +
+    "1. Giải thích: Tình bạn đẹp là sự đồng cảm.\n" +
+    "2. Biểu hiện: Giúp đỡ, chia sẻ, thông cảm.\n" +
+    "3. Phân biệt: Bạn tốt và bạn xấu.\n" +
+    "4. Bài học: Chọn bạn mà chơi, xây dựng tình bạn lâu dài.\n" +
+    "III. Kết bài: Tình bạn là gia tài quý giá.";
+}
+else if (topic.includes("nghịch cảnh") || topic.includes("khó khăn")) {
+    ideasOutput = "📌 DÀN Ý NGHỊ LUẬN XH (ĐỐI MẶT NGHỊCH CẢNH):\n" +
+    "I. Mở bài: Khó khăn rèn luyện con người.\n" +
+    "II. Thân bài:\n" +
+    "1. Giải thích: Nghịch cảnh là thử thách.\n" +
+    "2. Tác dụng: Tôi luyện ý chí, trưởng thành.\n" +
+    "3. Dẫn chứng: Nick Vujicic, thầy Nguyễn Ngọc Ký.\n" +
+    "4. Lời khuyên: Đừng bỏ cuộc, hãy mạnh mẽ.\n" +
+    "III. Kết bài: Khó khăn sẽ qua, thành công sẽ tới.";
+}
+
+// =========================== VI. LÝ LUẬN VĂN HỌC ===========================
+
+else if (topic.includes("giá trị hiện thực") || topic.includes("chủ nghĩa hiện thực")) {
+    ideasOutput = "📌 LÝ LUẬN VĂN HỌC (CHỦ NGHĨA HIỆN THỰC):\n" +
+    "- Phản ánh chân thực bức tranh xã hội.\n" +
+    "- Tái hiện mâu thuẫn giai cấp, bất công.\n" +
+    "- Tiêu biểu: Nam Cao (Chí Phèo), Ngô Tất Tố (Tắt đèn), Vũ Trọng Phụng (Số đỏ).";
+}
+else if (topic.includes("giá trị nhân đạo") || topic.includes("chủ nghĩa nhân đạo")) {
+    ideasOutput = "📌 LÝ LUẬN VĂN HỌC (CHỦ NGHĨA NHÂN ĐẠO):\n" +
+    "- Cảm thông sâu sắc với số phận con người.\n" +
+    "- Khát vọng tự do, hạnh phúc, công lý.\n" +
+    "- Tiêu biểu: Nguyễn Du (Truyện Kiều), Nam Cao (Lão Hạc), Thạch Lam (Hai đứa trẻ).";
+}
+else if (topic.includes("thơ mới") || topic.includes("1930-1945") && !topic.includes("chủ nghĩa")) {
+    ideasOutput = "📌 LÝ LUẬN VĂN HỌC (PHONG TRÀO THƠ MỚI 1930-1945):\n" +
+    "- Cái tôi cá nhân bật lên mạnh mẽ, độc đáo.\n" +
+    "- Tinh thần dân tộc, dân chủ.\n" +
+    "- Phá cách về hình thức, đa dạng phong cách.\n" +
+    "- Tác giả: Xuân Diệu, Huy Cận, Hàn Mặc Tử, Chế Lan Viên.";
+}
+else if (topic.includes("văn học kháng chiến") || topic.includes("1945-1975")) {
+    ideasOutput = "📌 LÝ LUẬN VĂN HỌC (VĂN HỌC KHÁNG CHIẾN 1945-1975):\n" +
+    "- Cảm hứng chủ đạo: Chủ nghĩa anh hùng cách mạng.\n" +
+    "- Khuynh hướng sử thi và lãng mạn.\n" +
+    "- Ngợi ca Tổ quốc, nhân dân, người lính.\n" +
+    "- Tiêu biểu: Tố Hữu, Nguyễn Đình Thi, Nguyễn Trung Thành.";
+}
+else if (topic.includes("văn học trung đại") || topic.includes("trung đại")) {
+    ideasOutput = "📌 LÝ LUẬN VĂN HỌC (VĂN HỌC TRUNG ĐẠI):\n" +
+    "- Bối cảnh: Xã hội phong kiến.\n" +
+    "- Chữ Hán và chữ Nôm.\n" +
+    "- Tư tưởng 'Văn dĩ tải đạo'.\n" +
+    "- Hệ thống thi pháp: Tính quy phạm, ước lệ.\n" +
+    "- Tác giả lớn: Nguyễn Trãi, Nguyễn Du, Đặng Trần Côn, Hồ Xuân Hương.";
+}
+
+// =========================== VII. TÁC PHẨM NƯỚC NGOÀI (CHƯƠNG TRÌNH PHỔ THÔNG) ===========================
+
+else if (topic.includes("rô-bin-xơn ngoài đảo hoang") || topic.includes("đi-phô")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (RÔ-BIN-XƠN NGOÀI ĐẢO HOANG - Đi-phô):\n" +
+    "1. Ý chí sống sót và vượt lên hoàn cảnh.\n" +
+    "2. Lao động, sáng tạo để cải thiện cuộc sống.\n" +
+    "3. Tinh thần lạc quan, niềm tin vào bản thân.\n" +
+    "4. Khát vọng tự do, trở về với con người.";
+}
+else if (topic.includes("chiến thắng mtao-mxây") || topic.includes("sử thi")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHIẾN THẮNG MTAO-MXÂY - Sử thi Ê-đê):\n" +
+    "1. Vẻ đẹp của người anh hùng Đăm Săn: Dũng mãnh, tài trí.\n" +
+    "2. Nghệ thuật so sánh phóng đại, trùng điệp.\n" +
+    "3. Tinh thần thượng võ, bảo vệ buôn làng.\n" +
+    "4. Lễ hội, phong tục của người Ê-đê.\n" +
+    "5. Sức sống của sử thi trong đời sống.";
+}
+else if (topic.includes("cảnh ngày xuân") || topic.includes("truyện kiều")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CẢNH NGÀY XUÂN - trích Truyện Kiều):\n" +
+    "1. Bức tranh mùa xuân: Trong sáng, tươi đẹp.\n" +
+    "2. Không khí lễ hội tưng bừng, thanh lịch.\n" +
+    "3. Hình ảnh chị em Thúy Kiều: Trang trọng, duyên dáng.\n" +
+    "4. Tâm trạng lưu luyến, bâng khuâng.\n" +
+    "5. Nghệ thuật tả cảnh ngụ tình bậc thầy.";
+}
+else if (topic.includes("chị em thúy kiều") || topic.includes("truyện kiều")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CHỊ EM THÚY KIỀU - trích Truyện Kiều):\n" +
+    "1. Vẻ đẹp của Thúy Vân: Trang trọng, đoan trang.\n" +
+    "2. Vẻ đẹp của Thúy Kiều: Sắc sảo mặn mà, tài năng toàn diện.\n" +
+    "3. Bút pháp ước lệ, điểm nhãn.\n" +
+    "4. Dự báo số phận: Kiều sẽ lận đận, Vân may mắn.\n" +
+    "5. Cảm hứng nhân văn, ca ngợi vẻ đẹp con người.";
+}
+else if (topic.includes("kiều ở lầu ngưng bích") || topic.includes("truyện kiều")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (KIỀU Ở LẦU NGƯNG BÍCH - trích Truyện Kiều):\n" +
+    "1. Hoàn cảnh cô đơn, bị giam lỏng.\n" +
+    "2. Nỗi nhớ Kim Trọng, nhớ cha mẹ.\n" +
+    "3. Tám câu cuối: Nỗi buồn trông ra bốn phía - tả cảnh ngụ tình.\n" +
+    "4. Lo sợ về tương lai mờ mịt.\n" +
+    "5. Nghệ thuật tả tâm trạng tinh tế.";
+}
+else if (topic.includes("lục vân tiên cứu kiều nguyệt nga") || topic.includes("nguyễn đình chiểu")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (LỤC VÂN TIÊN CỨU KIỀU NGUYỆT NGA - Nguyễn Đình Chiểu):\n" +
+    "1. Vẻ đẹp Lục Vân Tiên: Dũng cảm, hào hiệp, trượng nghĩa.\n" +
+    "2. Nhân vật Kiều Nguyệt Nga: Trân trọng, cảm kích.\n" +
+    "3. Tình huống: Kẻ ác hãm hại, người tốt giúp đỡ.\n" +
+    "4. Nghệ thuật ngôn ngữ mộc mạc, dễ nhớ.\n" +
+    "5. Lí tưởng nhân nghĩa của tác phẩm.";
+}
+else if (topic.includes("sự tích hồ gươm")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (SỰ TÍCH HỒ GƯƠM):\n" +
+    "1. Cuộc kháng chiến chống Minh của Lê Lợi.\n" +
+    "2. Sự giúp sức của thần Rùa Vàng với gươm thần.\n" +
+    "3. Hoàn gươm: Hòa bình, kết thúc chiến tranh.\n" +
+    "4. Truyền thống yêu nước, hòa hiếu.\n" +
+    "5. Giải thích tên hồ Hoàn Kiếm.";
+}
+else if (topic.includes("em bé thông minh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (EM BÉ THÔNG MINH - Truyện cổ tích):\n" +
+    "1. Trí thông minh, tài ứng biến xuất sắc.\n" +
+    "2. Những thử thách: Trả lời đố, giải oan.\n" +
+    "3. Vượt lên cái ác, cái bất lực.\n" +
+    "4. Trọng dụng nhân tài của vua, quan.\n" +
+    "5. Ước mơ của dân gian về trí tuệ Việt.";
+}
+else if (topic.includes("thạch sanh")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (THẠCH SANH - Truyện cổ tích):\n" +
+    "1. Sự ra đời kỳ lạ của Thạch Sanh.\n" +
+    "2. Phẩm chất: Thật thà, dũng cảm, tài năng.\n" +
+    "3. Chiến công: Diệt trăn tinh, đại bàng, cứu công chúa.\n" +
+    "4. Cái ác: Lý Thông hãm hại.\n" +
+    "5. Niêu cơm thần: Sự hào phóng và hòa bình.\n" +
+    "6. Kết thúc có hậu, công lý chiến thắng.";
+}
+
+// ===================== NGOÀI RA CÒN CÓ THỂ MỞ RỘNG THÊM =====================
+else if (topic.includes("mẹ tôi") || (topic.includes("ét-môn-đô-đơ-ami-xi"))) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (MẸ TÔI - Ét-môn-đô-đơ A-mi-xi):\n" +
+    "1. Lời khuyên sâu sắc về lòng hiếu thảo.\n" +
+    "2. Hình ảnh người mẹ tần tảo, hy sinh.\n" +
+    "3. Sự ăn năn của En-ri-cô.\n" +
+    "4. Bài học về tình mẫu tử, tôn trọng mẹ.";
+}
+else if (topic.includes("cổng trường mở ra") || topic.includes("lý lan")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CỔNG TRƯỜNG MỞ RA - Lý Lan):\n" +
+    "1. Tình mẹ con trước ngày tựu trường.\n" +
+    "2. Những suy nghĩ của mẹ về giáo dục.\n" +
+    "3. Sự nâng niu, kỳ vọng.\n" +
+    "4. Vai trò của gia đình trong việc học.";
+}
+else if (topic.includes("cuộc chia tay của những con búp bê") || topic.includes("khánh hoài")) {
+    ideasOutput = "📌 GỢI Ý LUẬN ĐIỂM (CUỘC CHIA TAY CỦA NHỮNG CON BÚP BÊ - Khánh Hoài):\n" +
+    "1. Nỗi đau của trẻ thơ khi bố mẹ ly hôn.\n" +
+    "2. Thành và Thủy: Giàu tình cảm.\n" +
+    "3. Chia tay đồ chơi: Sự mất mát tinh thần.\n" +
+    "4. Thông điệp: Gìn giữ hạnh phúc gia đình.";
+}
+
+// =========================== MẶC ĐỊNH (KHI KHÔNG CÓ TỪ KHÓA) ===========================
+else {
+    ideasOutput = "🎯 GỢI Ý Ý TƯỞNG PHÂN TÍCH TỔNG QUÁT:\n" +
+    "1. Xác định giá trị nội dung chính: Đề tài, chủ đề, tư tưởng.\n" +
+    "2. Phân tích các biểu tượng, chi tiết nghệ thuật đắt giá.\n" +
+    "3. Làm rõ đặc sắc nghệ thuật: Ngôn ngữ, giọng điệu, bút pháp.\n" +
+    "4. Liên hệ với bối cảnh xã hội, thời đại.\n" +
+    "5. So sánh với tác phẩm khác cùng đề tài hoặc cùng tác giả.\n" +
+    "6. Vận dụng lý luận văn học để đánh giá sâu sắc hơn.\n" +
+    "7. Rút ra ý nghĩa và sức sống của tác phẩm hôm nay.";
+}
+
+// Kết thúc output
+console.log(ideasOutput);
+
+            // Ghi dữ liệu vào ô
+            structBox.value = structureOutput;
+            planBox.value = ideasOutput;
+
+            // TẮT RADAR ĐỂ HIỆN KẾT QUẢ
+            overlayStruct.style.display = 'none';
+            overlayPlan.style.display = 'none';
+            
+        }, 1200); // 1.2 giây giả lập AI quét
+    }
+}
+
+// --- DATABASE NÂNG CẤP VĂN CHƯƠNG ---
+const LITERARY_DATABASE = {
+    "hay": { type: "UPGRADE", new: "đặc sắc / tinh tế / giàu sức gợi / sâu sắc", hint: "Từ 'hay' quá phổ thông", reason: "Nên dùng tính từ biểu cảm mạnh hơn." },
+    "nói": { type: "STYLE", new: "khẳng định / giãi bày / bộc bạch / nhấn mạnh", hint: "Thay thế động từ 'nói'", reason: "Phù hợp với từng sắc thái tâm trạng nhân vật." },
+    "tác giả": { type: "UPGRADE", new: "người nghệ sĩ / thi sĩ / cây bút / nhà nhân đạo", hint: "Tránh lặp từ 'tác giả'", reason: "Sử dụng định danh nghề nghiệp để tăng tính nghệ thuật." },
+    "vẻ đẹp": { type: "UPGRADE", new: "nét mỹ cảm / sức sống tiềm tàng / vẻ đẹp tâm hồn", hint: "Nâng cấp từ 'vẻ đẹp'", reason: "Dùng thuật ngữ phê bình văn học." },
+    "viết": { type: "STYLE", new: "chắp bút / khắc họa / tái hiện / dựng xây", hint: "Thay thế từ 'viết'", reason: "Sát nghĩa với hành động sáng tạo nghệ thuật." },
+    "qua đó": { type: "LOGIC", new: "thông qua lăng kính ấy / từ đó khơi gợi / là nhịp cầu dẫn lối", hint: "Từ nối quá đơn giản", reason: "Tạo sự uyển chuyển cho câu văn." },
+    "nhân vật": { type: "UPGRADE", new: "hình tượng nhân vật / linh hồn của tác phẩm", hint: "Làm sâu sắc hơn", reason: "Nhân vật là một chỉnh thể nghệ thuật." },
+    "cuộc đời": { type: "UPGRADE", new: "kiếp nhân sinh / dòng đời nổi trôi / thực tại nghiệt ngã", hint: "Dùng từ hán việt hoặc hình ảnh", reason: "Tạo màu sắc triết lý cho bài viết." },
+    "thấy": { type: "STYLE", new: "cảm nhận / thấu thị / nhận ra / chiêm nghiệm", hint: "Thay thế từ 'thấy'", reason: "Thể hiện sự đào sâu suy nghĩ." },
+    "rất": { type: "STYLE", new: "hết sức / khôn nguôi / đậm nét / sâu sắc", hint: "Từ nhấn mạnh yếu", reason: "Dùng trạng từ chỉ mức độ mạnh hơn." },
+    "phản ánh": { type: "THEORY", new: "tái hiện hiện thực / soi chiếu cuộc sống", hint: "Lý luận văn học", reason: "Văn học là tấm gương soi chiếu đời sống." },
+    "ý nghĩa": { type: "THEORY", new: "giá trị nhân đạo / thông điệp tư tưởng", hint: "Lý luận văn học", reason: "Xác định rõ loại ý nghĩa của tác phẩm." },
+
+    // ========== MỞ RỘNG 1: TÂM TRẠNG & CẢM XÚC ==========
+    "yêu": { type: "UPGRADE", new: "say đắm / cuồng si / rung động tận cùng / trao gửi linh hồn", hint: "Nâng cấp 'yêu'", reason: "Diễn tả cường độ mãnh liệt của cảm xúc." },
+    "ghét": { type: "UPGRADE", new: "căm phẫn / khinh bỉ / chán ghét đến tận xương tủy / ruồng bỏ phũ phàng", hint: "Cực đoan hóa 'ghét'", reason: "Thể hiện xung đột gay gắt." },
+    "sợ hãi": { type: "UPGRADE", new: "khiếp đảm / run rẩy / lạnh gáy / nỗi kinh hoàng vô thức", hint: "Từ 'sợ' quá đơn giản", reason: "Nhấn mạnh ám ảnh tâm lý." },
+    "cô đơn": { type: "UPGRADE", new: "lẻ loi giữa dòng đời / mắc kẹt trong ồn ào / bơ vơ / nỗi cô tận cùng", hint: "Tránh dùng 'cô đơn' suông", reason: "Tạo chiều sâu hiện sinh." },
+    "hạnh phúc": { type: "UPGRADE", new: "phút giây mãn nguyện / niềm hỉ hoan ngọt ngào / ánh sáng giữa bão tố", hint: "Nâng cấp 'hạnh phúc'", reason: "Tránh sự ủy mị sáo mòn." },
+    "đau khổ": { type: "UPGRADE", new: "nỗi đau nhân thế / vết cắt lưng chừng đời / nỗi thống khổ tột cùng / nỗi niềm rỉ máu", hint: "Tăng cường độ bi kịch", reason: "Để lại ấn tượng mạnh." },
+    "buồn": { type: "UPGRADE", new: "u hoài / não nề / man mác / thê lương / da diết / xót xa", hint: "Thay thế 'buồn'", reason: "Phân cấp cung bậc nỗi buồn." },
+    "vui": { type: "UPGRADE", new: "hân hoan / rạo rực / ngân nga / bừng nở / hỉ hoan / rộn ràng", hint: "Tránh vui sướng chung chung", reason: "Gợi cảm giác thể chất." },
+    "giận dữ": { type: "UPGRADE", new: "phẫn nộ / căm hờn / sôi máu / nổi khùng / thịnh nộ / lôi đình", hint: "Nâng cấp cơn giận", reason: "Thể hiện xung đột cao trào." },
+
+    // ========== MỞ RỘNG 2: THIÊN NHIÊN & BỐI CẢNH ==========
+    "rừng": { type: "UPGRADE", new: "đại ngàn hoang dại / khu rừng nguyên sinh tăm tối / cánh rừng già bí ẩn / rừng sâu huyền thoại", hint: "Nâng cấp 'rừng'", reason: "Tạo không gian kỳ vĩ hoặc rùng rợn." },
+    "sông": { type: "UPGRADE", new: "dòng sông xanh thẳm / con nước quanh co / huyết mạch của làng quê / dải lụa ngân dài", hint: "Hình ảnh hóa dòng sông", reason: "Gợi sự sống hoặc lãng mạn." },
+    "biển": { type: "UPGRADE", new: "đại dương cuồng nộ / mặt nước mênh mang / cõi lòng bao dung / sóng vỗ dữ dội", hint: "Đối lập yên bình - bão tố", reason: "Tạo chiều kích không gian." },
+    "núi": { type: "UPGRADE", new: "đỉnh cao chót vót / thành lũy thiên nhiên / non cao hun hút / tượng đài vĩnh cửu", hint: "Nâng cấp 'núi'", reason: "Biểu tượng cho sức mạnh hoặc cô độc." },
+    "trời": { type: "UPGRADE", new: "bầu trời vời vợi / vòm xanh thăm thẳm / đêm đen kịt / bình minh rực rỡ", hint: "Gắn với thời gian", reason: "Tạo bối cảnh vũ trụ." },
+    "cánh đồng": { type: "UPGRADE", new: "đồng lúa bát ngát / thảm cỏ xanh mướt / cánh đồng hoang / không gian mênh mang", hint: "Mở rộng bối cảnh", reason: "Gợi cuộc sống nông thôn." },
+    "mưa": { type: "UPGRADE", new: "những giọt nhớ / trời khóc / màn nước xóa nhòa / cơn buồn triền miên / hạt ngọc trời", hint: "Biểu tượng nỗi buồn", reason: "Tạo không khí u uẩn." },
+    "nắng": { type: "UPGRADE", new: "ánh vàng rực rỡ / tia lửa hy vọng / cái nắng chói chang / nắng hạ cháy da", hint: "Đối lập với mưa", reason: "Tạo không khí ấm áp hoặc gay gắt." },
+    "gió": { type: "UPGRADE", new: "làn gió mơn man / cơn gió dữ dội / hơi thở của trời / gió lộng chiều hôm", hint: "Nhẹ hoặc mạnh", reason: "Tạo cảm giác chuyển động." },
+    "bão": { type: "UPGRADE", new: "cơn thịnh nộ / cuồng phong lay động / sóng gió cuộc đời / bão tố lòng người", hint: "Ẩn dụ xung đột", reason: "Tạo kịch tính cao." },
+
+    // ========== MỞ RỘNG 3: THỜI GIAN ==========
+    "ngày": { type: "UPGRADE", new: "ban mai tinh khôi / trưa hè oi ả / chiều tà tím sẫm / đêm tối huyền bí", hint: "Chi tiết hóa thời điểm", reason: "Tạo không khí cụ thể." },
+    "đêm": { type: "UPGRADE", new: "màn đêm dày đặc / bóng tối bao phủ / đêm trăng thanh tịnh / đêm khuya vắng lặng", hint: "Gợi sự cô đơn hoặc bí ẩn", reason: "Tránh dùng 'đêm' chung chung." },
+    "tháng năm": { type: "UPGRADE", new: "dòng đời trôi nhanh / mùa màng qua đi / năm tháng dài đằng đẵng / thời gian lặng lẽ", hint: "Khoảng thời gian dài", reason: "Gợi nỗi nhớ, hoài niệm." },
+    "quá khứ": { type: "UPGRADE", new: "miền ký ức / dĩ vãng xa xăm / thời xa lắc / ngày xưa còn đó / dấu tích thời gian", hint: "Tránh dùng 'quá khứ' khô khan", reason: "Tạo chất trữ tình." },
+    "tương lai": { type: "UPGRADE", new: "phía chân trời / ngày mai tươi sáng / cõi hy vọng / miền hứa hẹn / vùng đất lạ", hint: "Lạc quan hoặc mơ hồ", reason: "Thể hiện khát vọng." },
+    "hiện tại": { type: "UPGRADE", new: "khoảnh khắc mong manh / giây phút hữu hạn / cái bây giờ chập chờn / thực tại phũ phàng", hint: "Đối lập với quá khứ", reason: "Nhấn mạnh sự tồn tại." },
+    "buổi sáng": { type: "UPGRADE", new: "bình minh ló rạng / tinh mơ / sáng sớm trong veo / hừng đông", hint: "Chọn từ thi vị", reason: "Khởi đầu mới mẻ." },
+    "hoàng hôn": { type: "UPGRADE", new: "ráng chiều đỏ rực / lúc tàn ngày / bóng tối gõ cửa / tim tím cuối chân trời", hint: "Gợi buồn hoặc lắng đọng", reason: "Tạo cảm xúc chuyển giao." },
+    "mùa xuân": { type: "UPGRADE", new: "khúc khai mở / thời khắc sinh sôi / xuân về thắm sắc / mùa của hy vọng", hint: "Gợi sự sống", reason: "Biểu tượng của sự tái sinh." },
+    "mùa thu": { type: "UPGRADE", new: "mùa lá rụng / thu vàng / trời thu xanh ngắt / mùa của nỗi nhớ", hint: "Gợi buồn man mác", reason: "Dễ tạo đồng cảm." },
+
+    // ========== MỞ RỘNG 4: HÀNH ĐỘNG NGHỆ THUẬT ==========
+    "kể": { type: "STYLE", new: "thuật lại / trần thuật / thổ lộ / giãi bày / ngân nga câu chuyện", hint: "Thay thế 'kể'", reason: "Nhấn giọng điệu tự sự." },
+    "tả": { type: "STYLE", new: "khắc họa / phác họa / tái hiện / vẽ nên bức tranh / miêu tả sống động", hint: "Miêu tả nâng cao", reason: "Hành động nghệ thuật." },
+    "xây dựng": { type: "STYLE", new: "đắp bồi bằng ngôn từ / tạc tượng bằng câu chữ / dựng lên thế giới / kiến tạo vũ trụ", hint: "Xây dựng nhân vật/bối cảnh", reason: "Tài hoa cá nhân." },
+    "thể hiện": { type: "STYLE", new: "bộc lộ / giãi bày / phô diễn / ký thác / gửi gắm", hint: "Tránh 'thể hiện' khô", reason: "Phân tâm nhân vật." },
+    "gửi gắm": { type: "STYLE", new: "thổi hồn vào câu chữ / ký thác nỗi niềm / gửi vào trang viết / ủ ấp chiêm nghiệm", hint: "Từ chuyên dùng văn chương", reason: "Tính nhân văn." },
+    "sáng tạo": { type: "UPGRADE", new: "thai nghén nghệ thuật / sinh ra từ cơn đau / kiến tạo cái mới / bước ra khỏi khuôn mòn", hint: "Hành động của nhà văn", reason: "Đề cao tính sáng tạo." },
+    "khắc họa": { type: "STYLE", new: "chạm trổ từng đường nét / phác thảo số phận / in dấu ấn / làm nổi bật", hint: "Thay thế 'khắc họa' lặp", reason: "Tránh nhàm chán." },
+
+    // ========== MỞ RỘNG 5: TỪ NỐI & LOGIC ==========
+    "vì vậy": { type: "LOGIC", new: "từ đó / như một hệ quả / bởi thế / cho nên mới có / bởi lẽ đó", hint: "Nguyên nhân - kết quả", reason: "Liên kết mềm mại." },
+    "tuy nhiên": { type: "LOGIC", new: "nhưng lạ thay / thế mà / thật trớ trêu / song, một điều đặc biệt / nhưng không ngờ", hint: "Tương phản", reason: "Tạo bất ngờ." },
+    "mặt khác": { type: "LOGIC", new: "ở góc nhìn khác / nhìn từ lăng kính đối lập / bình diện thứ hai / như một sự bổ sung", hint: "Triển khai đa chiều", reason: "Mềm mại, văn chương." },
+    "tóm lại": { type: "LOGIC", new: "gói trọn lại / kết tinh ở điểm / như bản tổng phổ / chốt lại một chữ / nói ngắn gọn", hint: "Kết luận có chất thơ", reason: "Ấn tượng cuối." },
+    "trước hết": { type: "LOGIC", new: "khởi nguồn từ / điểm xuất phát / thoạt tiên / mở đầu bằng / trước tiên là", hint: "Mở đoạn", reason: "Gợi mở vấn đề." },
+    "bên cạnh đó": { type: "LOGIC", new: "trong cùng mạch cảm xúc / song hành cùng đó / không chỉ dừng lại / cộng hưởng thêm", hint: "Bổ sung ý", reason: "Liền mạch." },
+    "do đó": { type: "LOGIC", new: "chính vì thế / bởi điều ấy / từ lẽ đó / hệ quả là", hint: "Kết luận", reason: "Tính chặt chẽ." },
+    "mặc dù": { type: "LOGIC", new: "dẫu cho / dù rằng / bất chấp / cho dù / chẳng màng", hint: "Nhượng bộ", reason: "Tạo chiều sâu đối lập." },
+
+    // ========== MỞ RỘNG 6: THUẬT NGỮ LÝ LUẬN VĂN HỌC ==========
+    "bi kịch": { type: "THEORY", new: "tấn thảm kịch / sự vỡ tan niềm tin / nỗi đau không lời giải / xung đột không dung hòa", hint: "Thuật ngữ thể loại", reason: "Định danh giá trị kịch." },
+    "cảm hứng": { type: "THEORY", new: "nguồn mạch sáng tạo / hơi thở nghệ thuật / sự bùng nát tinh thần / mạch ngầm cảm xúc", hint: "Lý luận sáng tác", reason: "Tránh chung chung." },
+    "kết cấu": { type: "THEORY", new: "cấu trúc đa tầng / mô hình nghệ thuật / tổ chức ngôn từ / khung xương tác phẩm", hint: "Thuật ngữ thi pháp", reason: "Cụ thể hóa, kỹ thuật." },
+    "giọng điệu": { type: "THEORY", new: "chất giọng thổn thức / âm hưởng chủ đạo / cung bậc trần thuật / sắc thái riêng", hint: "Phân tích phong cách", reason: "Làm sống động bài viết." },
+    "điển hình": { type: "THEORY", new: "hình tượng tập thể / cái chung trong cái riêng / đại diện cho thời đại / linh hồn nhân loại", hint: "Mỹ học Marx", reason: "Chính xác khái niệm." },
+    "tư tưởng": { type: "THEORY", new: "thông điệp thầm kín / triết lý sống / hệ quy chiếu / bài ca nhân ái", hint: "Nội dung tác phẩm", reason: "Cụ thể hơn 'ý nghĩa'." },
+    "nghệ thuật": { type: "THEORY", new: "bút pháp / phong cách / tài hoa kỹ thuật / phương thức biểu đạt", hint: "Hình thức nghệ thuật", reason: "Chính xác, không mơ hồ." },
+    "nhân đạo": { type: "THEORY", new: "tiếng lòng yêu thương / sự cảm thông / lòng trắc ẩn / bàn tay nâng đỡ", hint: "Giá trị lớn", reason: "Tránh khái quát chung chung." },
+    "chất thơ": { type: "THEORY", new: "cốt lõi trữ tình / vẻ đẹp bay bổng / sự lãng mạn / nhịp điệu tâm hồn", hint: "Cảm thụ tinh tế", reason: "Tạo giá trị thẩm mỹ." },
+    "bút pháp": { type: "THEORY", new: "lối viết / cách tân nghệ thuật / kỹ thuật viết / phương tiện biểu hiện", hint: "Phân tích phong cách", reason: "Đúng thuật ngữ." },
+
+    // ========== MỞ RỘNG 7: NHÂN VẬT ==========
+    "nhân vật chính": { type: "UPGRADE", new: "linh hồn câu chuyện / kẻ đi suốt chiều dài đau khổ / điểm tựa cảm xúc / trung tâm vũ trụ nghệ thuật", hint: "Tôn vinh", reason: "Vai trò trung tâm." },
+    "nhân vật phụ": { type: "UPGRADE", new: "mảnh ghép soi chiếu / tấm gương bàng bạc / chất xúc tác của số phận / cái bóng cần thiết", hint: "Chức năng", reason: "Tránh coi thường." },
+    "tính cách": { type: "THEORY", new: "bản chất nhân vật / tâm lý phức hợp / chiều sâu nội tâm / thế giới tinh thần", hint: "Phân tích", reason: "Cụ thể hóa." },
+    "ngoại hình": { type: "UPGRADE", new: "diện mạo / dung nhan / hình hài / những đường nét thân xác", hint: "Miêu tả nhân vật", reason: "Không máy móc." },
+    "hành động": { type: "THEORY", new: "cử chỉ / biểu hiện / việc làm bộc lộ tâm lý / hành vi mang tính bước ngoặt", hint: "Kịch tính", reason: "Không mơ hồ." },
+    "số phận": { type: "UPGRADE", new: "định mệnh phũ phàng / bàn tay điều khiển vô hình / trò chơi của tạo hóa / nấc thang nghiệt ngã", hint: "Nhân cách hóa", reason: "Tăng kịch tính." },
+
+    // ========== MỞ RỘNG 8: BIỂU TƯỢNG & HÌNH ẢNH ==========
+    "ánh trăng": { type: "UPGRADE", new: "vầng trăng cô độc / mảnh lẻ loi trên cao / ngọn đèn của kẻ cô đơn / tri kỷ của thi nhân", hint: "Biểu tượng lãng mạn", reason: "Gợi niềm trắc ẩn." },
+    "cửa sổ": { type: "UPGRADE", new: "ô cửa hy vọng / giới hạn giữa trong và ngoài / lỗ hổng ra thế giới / nơi ánh sáng lọt qua", hint: "Không gian ranh giới", reason: "Tính biểu tượng cao." },
+    "con đường": { type: "UPGRADE", new: "lối rẽ cuộc đời / hành trình vô định / lối mòn số phận / con đường trải nhựa thời gian", hint: "Hình ảnh thường gặp", reason: "Gợi sự lựa chọn, chuyển động." },
+    "ngọn lửa": { type: "UPGRADE", new: "khát vọng cháy bỏng / sự hủy diệt thanh cao / sự hồi sinh / tình yêu cuồng si", hint: "Biểu tượng mạnh", reason: "Đa nghĩa, giàu sức gợi." },
+    "vực thẳm": { type: "UPGRADE", new: "hố sâu nội tâm / nơi không ánh sáng / chân trời cô độc / bờ bên kia sự sống", hint: "Biểu tượng mạnh", reason: "Gợi tuyệt vọng." },
+    "bóng tối": { type: "UPGRADE", new: "bức màn u tối / vực thẳm cô đơn / màn đêm dày đặc / cõi vô minh", hint: "Đối lập ánh sáng", reason: "Tạo xung đột." },
+    "ánh sáng": { type: "UPGRADE", new: "tia hy vọng / ngọn đuốc nhân văn / vầng minh triết / sự hồi sinh rực rỡ", hint: "Biểu tượng tích cực", reason: "Tạo đối lập." },
+
+    // ========== MỞ RỘNG 9: CẢM THỤ TÁC PHẨM ==========
+    "ấn tượng": { type: "UPGRADE", new: "dư vang khó phai / ám ảnh đọng mãi / vết khắc sâu trong lòng / nỗi day dứt nghệ thuật", hint: "Cảm thụ người đọc", reason: "Tạo chiều sâu." },
+    "thành công": { type: "UPGRADE", new: "đạt đến độ chín nghệ thuật / ghi dấu trong lòng độc giả / để lại ám ảnh khó phai / cán mốc thăng hoa", hint: "Đánh giá", reason: "Tránh báo chí." },
+    "thất bại": { type: "UPGRADE", new: "sự hẫng hụt nghệ thuật / nút thắt không tháo gỡ / giới hạn của sáng tạo / khoảng lặng đáng tiếc", hint: "Phê bình tế nhị", reason: "Tránh phũ phàng." },
+    "giá trị": { type: "THEORY", new: "quả ngọt nghệ thuật / cốt lõi tư tưởng / thành tựu nhân văn / phần hồn còn mãi", hint: "Đánh giá chung", reason: "Tránh chung chung." },
+    "đặc sắc": { type: "UPGRADE", new: "đắt giá nghệ thuật / lấp lánh tài hoa / khó cưỡng / có một không hai", hint: "Khen ngợi", reason: "Tránh dùng đi dùng lại." },
+
+    // ========== MỞ RỘNG 10: MỞ ĐẦU VÀ KẾT THÚC ==========
+    "đầu tiên": { type: "SENTENCE", new: "mở màn là / trước hết, người đọc bắt gặp / điểm khởi nguồn cảm xúc / thứ nhất, không thể không kể tới", hint: "Mở đoạn", reason: "Tránh liệt kê khô cứng." },
+    "tiếp theo": { type: "SENTENCE", new: "bức tranh nghệ thuật tiếp tục hoàn thiện / mạch nguồn thứ hai / bước sang thiên trường đoạn khác / nối dài cảm xúc", hint: "Kết nối ý", reason: "Không ngắt quãng." },
+    "cuối cùng": { type: "SENTENCE", new: "khép lại hành trình / điểm kết như dấu lặng / ở thiên thứ ba / bước vào cõi tận cùng", hint: "Kết thúc ấn tượng", reason: "Tạo dư vang." },
+    "tóm lược": { type: "SENTENCE", new: "kết tinh lại ở một điểm / gói gém cảm xúc / chắt lọc linh hồn tác phẩm / như một lời kết trầm hùng", hint: "Kết đoạn", reason: "Dư ba kéo dài." },
+    "đọng lại": { type: "SENTENCE", new: "dư vang / nỗi niềm còn mãi / vết xước trong tim / giọt nước mắt nghệ thuật / nỗi ám ảnh", hint: "Cảm xúc cuối", reason: "Người đọc nhớ mãi." },
+
+    // --- DATABASE NÂNG CẤP VĂN CHƯƠNG (TIẾP TỤC MỞ RỘNG) ---
+// Đính kèm vào LITERARY_DATABASE ở trên
+
+    // ========== MỞ RỘNG 11: MÀU SẮC (SIÊU PHONG PHÚ) ==========
+    "màu đỏ": { type: "UPGRADE", new: "rực lửa / thắm đậm / sắc son / màu của giận dữ / màu của khát khao / hồng ngầu nhiệt huyết", hint: "Màu sắc cảm xúc", reason: "Gợi đam mê hoặc bạo lực." },
+    "màu xanh": { type: "UPGRADE", new: "xanh ngắt / xanh rờn / màu hy vọng / mát mẻ dịu dàng / xanh của bình yên / sắc lá non", hint: "Tươi mát", reason: "Gợi sự sống, thanh bình." },
+    "trắng": { type: "UPGRADE", new: "trinh bạch / tinh khôi / bạch khiết / màu của sự bắt đầu / trắng xóa / ngần ấy", hint: "Sự tinh khiết", reason: "Gợi sự trong trẻo hoặc chết chóc." },
+    "đen": { type: "UPGRADE", new: "huyền bí / mực thẳm / xám xịt / màu của vực sâu / đặc quánh / u tối", hint: "Bí ẩn hoặc đau buồn", reason: "Tạo cảm giác nặng nề." },
+    "vàng": { type: "UPGRADE", new: "chói chang / rực rỡ / hoàng kim / màu của no ấm / vàng mật / trù phú", hint: "Sang trọng hoặc nắng", reason: "Gợi sự giàu có hoặc tàn phai." },
+    "tím": { type: "UPGRADE", new: "tím ngắt / thủy chung / màu của hoàng hôn / sầu muộn / mực tím lưu luyến", hint: "Chung thủy", reason: "Gợi nỗi buồn lãng mạn." },
+    "hồng": { type: "UPGRADE", new: "phai phôi / dịu dàng / màu của tuổi trẻ / e ấp / hồng tươi", hint: "Thanh xuân", reason: "Gợi tình yêu hoặc mộng mơ." },
+    "nâu": { type: "UPGRADE", new: "ấm áp / mộc mạc / màu đất / chân quê / nâu giản dị / hoài cổ", hint: "Bình dị", reason: "Gợi sự gần gũi, thân thương." },
+
+    // ========== MỞ RỘNG 12: ÂM THANH (PHONG PHÚ) ==========
+    "tiếng cười": { type: "UPGRADE", new: "khúc nhạc vui / tiếng phá lên / tràng cười giòn tan / nụ cười chua xót / tiếng cười ra nước mắt", hint: "Sắc thái đa dạng", reason: "Phân biệt vui - buồn." },
+    "tiếng khóc": { type: "UPGRADE", new: "nức nở / oà lên / nghẹn ngào / dòng lệ trôi / tiếng khóc đêm khuya / thổn thức", hint: "Sắc thái đau buồn", reason: "Đa dạng cung bậc buồn." },
+    "tiếng mưa": { type: "UPGRADE", new: "rả rích / tí tách / rơi đều / mưa xối xả / tiếng buồn rơi / lộp bộp", hint: " Âm thanh thiên nhiên", reason: "Gợi nỗi cô đơn hoặc thanh lọc." },
+    "tiếng gió": { type: "UPGRADE", new: "vi vu / rít gào / thổi vi vút / gió thì thầm / tiếng hú / lao xao", hint: "Nhẹ hoặc mạnh", reason: "Tạo cảm giác chuyển động." },
+    "tiếng chim": { type: "UPGRADE", new: "líu lo / ríu rít / hót vang / khúc ca bình minh / tiếng gọi bạn", hint: "Vui tươi", reason: "Gợi sự sống, yên bình." },
+    "im lặng": { type: "UPGRADE", new: "tĩnh mịch / không một tiếng động / câm lặng / yên ắng đến rợn người / sự thinh lặng / cõi chết", hint: "Đối lập ồn ào", reason: "Nhấn mạnh sự cô quạnh." },
+
+    // ========== MỞ RỘNG 13: CÁC TRẠNG TỪ CHỈ MỨC ĐỘ ==========
+    "cực kỳ": { type: "STYLE", new: "cùng cực / tột bực / thượng thừa / vô cùng / vô hạn / muôn phần", hint: "Siêu mạnh", reason: "Nhấn mạnh tuyệt đối." },
+    "hơi hơi": { type: "STYLE", new: "thoang thoảng / phơn phớt / nhàn nhạt / lờ mờ / bâng quơ", hint: "Rất nhẹ", reason: "Sự tinh tế." },
+    "khá": { type: "STYLE", new: "tương đối / ở mức độ / đủ dùng / vừa phải / chẳng nhiều chẳng ít", hint: "Trung bình", reason: "Tránh mơ hồ." },
+    "hoàn toàn": { type: "STYLE", new: "triệt để / tuyệt đối / trọn vẹn / bao trùm / tất cả / đứt đoạn", hint: " bao phủ", reason: "Cường điệu hóa." },
+    "gần như": { type: "STYLE", new: "thập thò / mười phân vẹn mười / suýt soát / hầu hết / cận kề", hint: "Sắp đạt", reason: "Sự mong manh." },
+
+    // ========== MỞ RỘNG 14: KHÔNG GIAN (CHI TIẾT) ==========
+    "căn phòng": { type: "UPGRADE", new: "buồng nhỏ / gian phòng tù túng / căn phòng ám khói / không gian chật hẹp / nơi trú ngụ", hint: "Đóng kín", reason: "Gợi cảm giác bức bối hoặc thân mật." },
+    "ngõ hẻm": { type: "UPGRADE", new: "con hẻm nhỏ / ngõ sâu hun hút / đường cùng / lối nhỏ / ngõ tối om", hint: "Hẹp", reason: "Gợi sự bí ẩn hoặc nghèo khổ." },
+    "quảng trường": { type: "UPGRADE", new: "khoảng rộng / nơi tụ họp / biểu tượng của tự do / không gian mênh mang / sân khấu lịch sử", hint: "Rộng lớn", reason: "Tầm vóc." },
+    "nghĩa trang": { type: "UPGRADE", new: "khu yên nghỉ / chốn an nghỉ cuối cùng / cánh đồng bia đá / nơi trở về của cát bụi", hint: "Cái chết", reason: "Buồn, thiêng liêng." },
+    "bến tàu": { type: "UPGRADE", new: "nơi chia ly / điểm hẹn / khởi đầu của hành trình / bến đỗ / nơi tiễn đưa", hint: "Chuyển động", reason: "Gợi sự cách biệt hoặc hy vọng." },
+
+    // ========== MỞ RỘNG 15: TẢ NHÂN VẬT (CỬ CHỈ, HÀNH ĐỘNG) ==========
+    "đi": { type: "STYLE", new: "bước / dạo / sải bước / lững thững / lê bước / phiêu dạt", hint: "Di chuyển", reason: "Phân cấp tốc độ, tâm trạng." },
+    "chạy": { type: "STYLE", new: "phóng / lao / vội vã / hối hả / ba chân bốn cẳng / cuống quýt", hint: "Tốc độ cao", reason: "Gấp gáp." },
+    "nằm": { type: "STYLE", new: "trườn / nhoài / ngả lưng / gục / phủ phục", hint: "Tư thế", reason: "Gợi mệt mỏi hoặc buông xuôi." },
+    "ngồi": { type: "STYLE", new: "chồm hổm / tréo chân / thu mình / lim dim / ngồi bệt / ru rú", hint: "Tĩnh tại", reason: "Tạo dáng tâm lý." },
+    "nhìn": { type: "STYLE", new: "ngắm / đăm chiêu / liếc / trừng mắt / dõi theo / ngước nhìn / cúi gằm", hint: "Ánh mắt", reason: "Tiết lộ tâm trạng." },
+    "cầm": { type: "STYLE", new: "nắm / giữ / ôm ghì / vin vào / túm / nâng niu", hint: "Tay", reason: "Sắc thái cảm xúc qua bàn tay." },
+    "cho": { type: "UPGRADE", new: "trao gửi / biếu tặng / ban phát / hiến dâng / vứt cho / đút lót", hint: "Chuyển quyền sở hữu", reason: "Tính cách nhân vật." },
+    "lấy": { type: "UPGRADE", new: "cướp / chiếm đoạt / đớp / vồ / thủ / giành giật", hint: "Chiếm hữu", reason: "Bản năng hoặc tham lam." },
+
+    // ========== MỞ RỘNG 16: CÁCH NÓI VỀ THIÊN NHIÊN BUỔI TỐI ==========
+    "bình minh": { type: "UPGRADE", new: "hửng đông / rạng đông / bức màn sương tan / mở mắt trời / chào ngày mới", hint: "Khởi đầu", reason: "Tươi sáng." },
+    "hoàng hôn": { type: "UPGRADE", new: " chạng vạng / tịch dương / lúc lặn / ngày tàn / phút nhá nhem", hint: "Kết thúc ngày", reason: "Lãng mạn hoặc buồn." },
+    "ban đêm": { type: "UPGRADE", new: "khoảnh khắc đen / màn đêm buông / chốn tăm tối / giấc ngủ của muôn loài / vương quốc bóng tối", hint: "Mất ánh sáng", reason: "Huyền bí." },
+    "trăng": { type: "UPGRADE", new: "mảnh ngà / vầng trăng / chị Hằng / đĩa bạc / đèn trời", hint: "Vẻ đẹp", reason: "Lãng mạn." },
+    "sao": { type: "UPGRADE", new: "hạt ngọc trời / đom đóm trên cao / mắt đêm / tinh tú", hint: "Lấp lánh", reason: "Mong manh." },
+
+    // ========== MỞ RỘNG 17: CẢM XÚC THẨM MỸ (KHI XEM TÁC PHẨM NGHỆ THUẬT) ==========
+    "xúc động": { type: "UPGRADE", new: "dâng trào / nghẹn lời / vỡ òa / lặng đi / rưng rưng / xúc động mạnh", hint: "Cảm xúc", reason: "Cao trào tình cảm." },
+    "thích thú": { type: "UPGRADE", new: "mê mẩn / say sưa / đam mê / hứng khởi / phấn chấn", hint: "Vừa lòng", reason: "Mức độ cao." },
+    "chán ghét": { type: "UPGRADE", new: "ngán ngẩm / tởm lợm / ghê sợ / chán nản / ức chế", hint: "Tiêu cực", reason: "Mạnh mẽ." },
+    "tò mò": { type: "UPGRADE", new: "hiếu kỳ / thèm khám phá / háo hức / mong đợi", hint: "Muốn biết", reason: "Thôi thúc." },
+    "bàng hoàng": { type: "UPGRADE", new: "choáng váng / sững sờ / ngỡ ngàng / há hốc / đờ đẫn", hint: "Bất ngờ mạnh", reason: "Sốc." },
+
+    // ========== MỞ RỘNG 18: ĐỘNG TỪ VĂN CHƯƠNG (TÁC GIẢ) ==========
+    "triển khai": { type: "STYLE", new: "lập luận / mở rộng / cụ thể hóa / làm rõ / giãi bày tỉ mỉ", hint: "Phân tích", reason: "Từ hàn lâm." },
+    "ca ngợi": { type: "STYLE", new: "tán dương / đề cao / tôn vinh / ngợi ca / tấm tắc", hint: "Khen", reason: "Tránh cũ." },
+    "phê phán": { type: "STYLE", new: "lên án / chỉ trích / đả kích / vạch trần / tố cáo", hint: "Trách", reason: "Mạnh." },
+    "khẳng định": { type: "STYLE", new: "quả quyết / một mực tin / tuyên bố / khẳng định chắc nịch", hint: "Chắc chắn", reason: "Uy tín." },
+    "gợi mở": { type: "STYLE", new: "khêu gợi / mở ra / dẫn dắt / vẽ ra khả năng", hint: "Hình dung", reason: "Liên tưởng." },
+
+    // ========== MỞ RỘNG 19: CÁC CÂU CHUYỂN ĐOẠN / CHUYỂN Ý (PHONG PHÚ) ==========
+    "thứ nhất": { type: "LOGIC", new: "điểm thứ nhất / trước tiên / đầu tiên và quan trọng nhất / khởi nguồn", hint: "Liệt kê", reason: "Rõ ràng." },
+    "thứ hai": { type: "LOGIC", new: "tiếp đến / tựa đề thứ hai / mặt khác / xét về khía cạnh", hint: "Bổ sung", reason: "Mạch lạc." },
+    "không những thế": { type: "LOGIC", new: "hơn nữa / chưa dừng ở đó / thêm vào đó / vả lại", hint: "Tăng tiến", reason: "Nhấn mạnh." },
+    "chính vì lẽ đó": { type: "LOGIC", new: "bởi vậy / do đó mà / vì như thế / chính vì điều ấy", hint: "Nguyên nhân", reason: "Hệ quả." },
+    "đồng thời": { type: "LOGIC", new: "cùng lúc / song song / bên cạnh việc / vừa... vừa", hint: " Xảy ra cùng nhau", reason: "Song song." },
+
+    // ========== MỞ RỘNG 20: MIÊU TẢ TÂM LÝ PHỨC HỢP ==========
+    "lưỡng lự": { type: "UPGRADE", new: "do dự / giữa hai lựa chọn / phân vân / đứng giữa ngã ba / một bước không kịp", hint: "Quyết định không rõ", reason: "Kịch tính nội tâm." },
+    "hy vọng": { type: "UPGRADE", new: "niềm tin nhỏ nhoi / tia sáng le lói / chờ đợi / hướng về phía trước", hint: "Lạc quan", reason: "Nguồn sống." },
+    "tuyệt vọng": { type: "UPGRADE", new: "bế tắc / buông xuôi / mất hết niềm tin / bóng tối vây phủ / đầu hàng số phận", hint: "Tiêu cực tột cùng", reason: "Bi kịch." },
+    "day dứt": { type: "UPGRADE", new: "ăn năn / hối hận / cắn rứt / áy náy / không thể quên", hint: "Lỗi lầm", reason: "Nặng nề." },
+    "căm hận": { type: "UPGRADE", new: "thù hằn / oán giận / ghim trong lòng / nung nấu", hint: "Cực đoan", reason: "Thúc đẩy hành động." },
+
+    // ========== MỞ RỘNG 21: HÌNH ẢNH CON NGƯỜI TRONG XÃ HỘI ==========
+    "người già": { type: "UPGRADE", new: "bậc cao niên / những người tóc bạc / lớp người kinh qua / trụ cột tinh thần / mái đầu bạc phơ", hint: "Trân trọng", reason: "Tấm lòng vàng." },
+    "trẻ em": { type: "UPGRADE", new: "mầm non / ánh mai sau / thế hệ mới / tương lai đất nước / hạt bụi vàng", hint: "Hi vọng", reason: "Tinh khôi." },
+    "người phụ nữ": { type: "UPGRADE", new: "phái yếu / người mẹ hiền / một nửa thế giới / bông hoa giữa đời thường / người giữ lửa", hint: "Đẹp và mạnh mẽ", reason: "Tôn vinh." },
+    "người nông dân": { type: "UPGRADE", new: "người con của đất / cần cù lao động / trụ cột hiện thực", hint: "Mộc mạc", reason: "Chân lấm tay bùn." },
+    "người lính": { type: "UPGRADE", new: "anh bộ đội Cụ Hồ / chiến sỹ / người giữ làng / phên dậu đất nước", hint: "Anh hùng", reason: "Lòng dũng cảm." },
+
+    // ========== MỞ RỘNG 22: TỪ NGỮ TẢ MÙI VỊ, VẬT LÝ ==========
+    "ngọt": { type: "UPGRADE", new: "ngọt lịm / thanh tao / ngọt sắc / lâng lâng", hint: "Vị", reason: "Biểu tượng hạnh phúc." },
+    "đắng": { type: "UPGRADE", new: "chát / đắng nghét / buồn đắng", hint: "Vị", reason: "Biểu tượng đau khổ." },
+    "mặn": { type: "UPGRADE", new: "cay / mằn mặn", hint: "Vị", reason: "Biểu tượng nước mắt." },
+    "chua": { type: "UPGRADE", new: "chua lè / chua cay", hint: "Vị", reason: "Biểu tượng duyên phận." },
+    "thơm": { type: "UPGRADE", new: "nồng nàn / ngào ngạt / thơm phức / hương đồng gió nội", hint: "Khứu giác", reason: "Gợi cảm giác dễ chịu." },
+    "hôi": { type: "UPGRADE", new: "thối / tanh tưởi / khó ngửi", hint: "Xấu", reason: "Gợi cảm giác ghê tởm." },
+
+    // ========== MỞ RỘNG 23: VẬT DỤNG TRONG ĐỜI THƯỜNG (TÍNH BIỂU TƯỢNG) ==========
+    "cánh cửa": { type: "UPGRADE", new: " lối ra / lối vào / ranh giới hai thế giới / bước ngoặt", hint: "Giao thoa", reason: "Mở lối hoặc khép lòng." },
+    "chiếc gương": { type: "UPGRADE", new: "thủy tinh trong suốt / mặt hồ tĩnh lặng / soi lại bản thân/ nhân đôi", hint: "Phản chiếu", reason: "Nhận diện con người." },
+    "chìa khóa": { type: "UPGRADE", new: "nắm giữ / mấu chốt / lời giải / khai phá", hint: "Cốt lõi", reason: "Tháo gỡ vấn đề." },
+    "cuốn sách": { type: "UPGRADE", new: "kho tàng tri thức / người bạn thầm lặng / báu vật của trí tuệ", hint: "Trí tuệ", reason: "Nguồn sáng." },
+    "đôi giày": { type: "UPGRADE", new: "người đồng hành / dấu chân / chứng nhân cuộc đời", hint: "Nhân chứng", reason: "Gắn kết hành trình." },
+
+    // ========== MỞ RỘNG 24: ĐẤT NƯỚC, QUÊ HƯƠNG ==========
+    "quê hương": { type: "UPGRADE", new: "chôn nhau cắt rốn / mẹ hiền / máu thịt / nơi tìm về / nguồn cội", hint: "Tình cảm", reason: "Linh hồn." },
+    "đất nước": { type: "UPGRADE", new: "Tổ quốc / non sông / bờ cõi / Sông núi nhà / sinh thành", hint: "Lớn lao", reason: "Trách nhiệm, niềm tự hào." },
+    "làng quê": { type: "UPGRADE", new: "thôn xóm / luỹ tre / mái đình / cánh đồng", hint: "Hình ảnh thuần VN", reason: "Bình dị, thân thuộc." },
+    "thành phố": { type: "UPGRADE", new: "đô thị / phồn hoa / náo nhiệt / chốn phồn hoa", hint: "Hiện đại", reason: "Sầm uất, bon chen." },
+
+    // ========== MỞ RỘNG 25: CÁCH NÓI VỀ NGHỆ THUẬT THƠ CA (RIÊNG) ==========
+    "vần thơ": { type: "POETRY", new: "từng lời thổn thức / gieo vần / nhạc điệu / thanh cao", hint: "Kỹ thuật", reason: "Độc đáo." },
+    "nhịp thơ": { type: "POETRY", new: "bước chân của cảm xúc / phách / nốt trầm / phút lắng", hint: "Tiết tấu", reason: "Sự ngân nga." },
+    "hình ảnh thơ": { type: "POETRY", new: "bức họa ngôn từ / tượng đài thi ca / mã nghệ thuật / bóng hình tư tưởng", hint: "Biểu trưng", reason: "Cảm thụ." },
+
+    // ========== MỞ RỘNG 26: CẢNH VẬT THIÊN NHIÊN THEO MÙA ==========
+    "mùa xuân": { type: "UPGRADE", new: "khúc khai mở / thời khắc sinh sôi / xuân về thắm sắc / mùa của hy vọng / đất trời giao hòa / chồi non lộc biếc", hint: "Gợi sự sống", reason: "Biểu tượng của sự tái sinh." },
+    "mùa hạ": { type: "UPGRADE", new: "mùa hè rực cháy / nắng đổ lửa / ve kêu rả rích / mùa của nhiệt huyết / hạ về tim tím", hint: "Sôi động", reason: "Gợi tuổi trẻ, đam mê." },
+    "mùa thu": { type: "UPGRADE", new: "thu vàng / trời thu xanh ngắt / mùa lá rụng / gió heo may / mùa của nỗi nhớ / thu sang tím lịm", hint: "Gợi buồn man mác", reason: "Dễ tạo đồng cảm." },
+    "mùa đông": { type: "UPGRADE", new: "mùa giá lạnh / băng tuyết phủ / gió mùa đông bắc / mùa của sự tĩnh lặng / đông tái tê", hint: "Lạnh lẽo", reason: "Gợi sự cô đơn, khắc nghiệt." },
+
+    // ========== MỞ RỘNG 27: THỜI TIẾT & KHÍ HẬU ==========
+    "nóng": { type: "UPGRADE", new: "nóng như đổ lửa / oi bức / nung nấu / hầm hập / cháy da cháy thịt / nóng hổi", hint: "Cảm giác nhiệt", reason: "Gợi sự khó chịu hoặc đam mê." },
+    "lạnh": { type: "UPGRADE", new: "lạnh buốt / cắt da cắt thịt / tê tái / lạnh thấu xương / băng giá / rét run", hint: "Cảm giác nhiệt", reason: "Gợi sự cô độc hoặc tử thần." },
+    "mưa bão": { type: "UPGRADE", new: "giông tố / bão táp mưa sa / trời long đất lở / cuồng phong dữ dội / trận mưa xối xả", hint: "Dữ dội", reason: "Tạo kịch tính cao." },
+    "sương mù": { type: "UPGRADE", new: "màn sương dày đặc / khói sương / sương khói mờ nhòa / bức màn bí ẩn / sương lam", hint: "Mơ hồ", reason: "Tạo không khí huyền ảo." },
+    "nắng đẹp": { type: "UPGRADE", new: "nắng vàng ruộm / nắng nhẹ nhàng / chan hòa ánh nắng / nắng lung linh / nắng tỏa khắp", hint: "Dễ chịu", reason: "Không khí lạc quan." },
+
+    // ========== MỞ RỘNG 28: CÁC LOÀI CÂY CỐI ==========
+    "cây bàng": { type: "UPGRADE", new: "cây bàng già / bàng thay lá / cây bàng sân trường / bàng xanh rờn / bàng trụi lá", hint: "Hình ảnh học đường", reason: "Gợi tuổi thơ, kỷ niệm." },
+    "cây phượng": { type: "UPGRADE", new: "phượng đỏ rực / hoa phượng cháy hè / phượng vĩ / góc trời đỏ thắm / mùa thi", hint: "Mùa hè", reason: "Chia tay, hoài niệm." },
+    "cây tre": { type: "UPGRADE", new: "lũy tre xanh / tre ngà / tre trúc / tre làng / tre thẳng tắp", hint: "Biểu tượng Việt Nam", reason: "Bền bỉ, nghĩa tình." },
+    "lúa": { type: "UPGRADE", new: "lúa vàng óng / đồng lúa chín / bông lúa trĩu nặng / lúa xanh mơn mởn / hạt ngọc trời", hint: "Biểu tượng nông nghiệp", reason: "No ấm, cần cù." },
+    "hoa sen": { type: "UPGRADE", new: "sen hồng / bông sen thơm ngát / sen trong đầm / sen vươn khỏi bùn", hint: "Biểu tượng Phật giáo", reason: "Tinh khiết, thanh cao." },
+
+    // ========== MỞ RỘNG 29: LOÀI VẬT TRONG VĂN CHƯƠNG ==========
+    "chim én": { type: "UPGRADE", new: "én bay / én liệng / cánh én báo xuân / én chao nghiêng", hint: "Mùa xuân", reason: "Hy vọng, khởi đầu." },
+    "con cò": { type: "UPGRADE", new: "cò trắng / cò bay lả bay la / cánh cò / cò trên đồng", hint: "Làng quê", reason: "Tảo tần, mộc mạc." },
+    "con trâu": { type: "UPGRADE", new: "trâu rạp / trâu thong thả / chiếc cày cùng trâu / trâu làng", hint: "Nông nghiệp", reason: "Gần gũi, kiên cường." },
+    "con ngựa": { type: "UPGRADE", new: "ngựa phi / tuấn mã / ngựa hí vang / vó ngựa", hint: "Tốc độ", reason: "Tự do, mạnh mẽ." },
+    "con chó": { type: "UPGRADE", new: "chó vàng / chó săn / người bạn bốn chân / linh cẩu", hint: "Thân thiết", reason: "Trung thành." },
+    "con mèo": { type: "UPGRADE", new: "mèo mun / mèo lười / bóng mèo / mèo rình", hint: "Bí ẩn", reason: "Tinh quái." },
+    "con hổ": { type: "UPGRADE", new: "hổ dữ / chúa sơn lâm / vằn hổ / hổ gầm", hint: "Sức mạnh", reason: "Quyền uy." },
+
+    // ========== MỞ RỘNG 30: ĐẶC ĐIỂM NGOẠI HÌNH (CỤ THỂ) ==========
+    "cao": { type: "UPGRADE", new: "cao lớn / lêu khêu / vạm vỡ / cao vượt / sừng sững", hint: "Chiều cao", reason: "Tạo dáng vóc." },
+    "thấp": { type: "UPGRADE", new: "thấp bé / lùn tịt / thấp đét / nhỏ con", hint: "Chiều cao", reason: "Tương phản." },
+    "gầy": { type: "UPGRADE", new: "gầy tong / gầy nhom / gầy gò / còm cõi / khẳng khiu", hint: "Hình dáng", reason: "Sức khỏe yếu hoặc nghèo khó." },
+    "béo": { type: "UPGRADE", new: "mập mạp / tròn trịa / phục phịch / lực lưỡng", hint: "Hình dáng", reason: "Sức vóc hoặc phàm ăn." },
+    "đẹp trai": { type: "UPGRADE", new: "tuấn tú / hào hoa / phong độ / nam tính / điển trai / lịch lãm", hint: "Trai đẹp", reason: "Sắc nước hương trời." },
+    "xấu trai": { type: "UPGRADE", new: "xấu xí / thô kệch / lem nhem / dị hợm", hint: "Trai xấu", reason: "Nhân dạng." },
+    "xinh đẹp": { type: "UPGRADE", new: "diễm lệ / yêu kiều / mặn mà / đoan trang / sắc nước hương trời / thục nữ", hint: "Gái đẹp", reason: "Tuyệt mỹ." },
+
+    // ========== MỞ RỘNG 31: ĐẶC TẢ ÁNH MẮT ==========
+    "mắt": { type: "UPGRADE", new: "đôi mắt / ánh mắt / cặp mắt / cửa sổ tâm hồ / ốc nhãn", hint: "Nhìn", reason: "Bộc lộ tâm can." },
+    "mắt sáng": { type: "UPGRADE", new: "long lanh / lấp lánh / sáng quắc / bừng sáng / lóe lửa", hint: "Tinh anh", reason: "Thông minh." },
+    "mắt buồn": { type: "UPGRADE", new: "thâm quầng / u buồn / đượm buồn / trống vắng / lờ đờ", hint: "Ảm đạm", reason: "Sầu khổ." },
+    "đôi mắt tình": { type: "UPGRADE", new: "say đắm / bỏng cháy / nồng nàn / trìu mến / si mê", hint: "Rung động", reason: "Trao gửi." },
+
+    // ========== MỞ RỘNG 32: TẢ MÁI TÓC ==========
+    "tóc dài": { type: "UPGRADE", new: "mây dài / thác tơ / mượt mà / chấm ngang lưng", hint: "Nữ tính", reason: "Duyên dáng." },
+    "tóc bạc": { type: "UPGRADE", new: "phơ phơ / hoa râm / bạc phơ / muối tiêu", hint: "Tuổi già", reason: "Trải đời." },
+    "tóc đen": { type: "UPGRADE", new: "huyền bóng / đen nhánh / mun / thâm", hint: "Xuân xanh", reason: "Khỏe mạnh." },
+    "tóc vàng": { type: "UPGRADE", new: "hoe hoe / mật ong / mỡ gà / bạch kim", hint: "Tây phương", reason: "Lạ mắt." },
+
+    // ========== MỞ RỘNG 33: LÀN DA ==========
+    "da trắng": { type: "UPGRADE", new: "trắng ngần / trắng muốt / trắng như sữa / bạch tuyết / da láng mịn", hint: "Sang", reason: "Quý phái." },
+    "da ngăm": { type: "UPGRADE", new: "ngăm đen / rám nắng / khỏe khoắn / dạn dày", hint: "Chân quê", reason: "Lao động." },
+    "da nhăn": { type: "UPGRADE", new: "đồi mồi / chằng chịt / dày dạn", hint: "Lão hóa", reason: "Dấu ấn thời gian." },
+
+    // ========== MỞ RỘNG 34: GIỌNG NÓI ==========
+    "giọng ồm ồm": { type: "UPGRADE", new: "trầm đục / vang dội / ầm ầm / như sấm", hint: "Thô ráp", reason: "Nam tính." },
+    "giọng nhỏ nhẹ": { type: "UPGRADE", new: "thỏ thẻ / ngọt như mía lùi / êm dịu / nhẹ tựa hơi thở", hint: "Nữ tính", reason: "Dễ thương." },
+    "giọng the thé": { type: "UPGRADE", new: "chua loét / khó chịu / lanh lảnh / nhức óc", hint: "Khó ưa", reason: "Cáu kỉnh." },
+    "giọng sang": { type: "UPGRADE", new: "trịnh trọng / khàn khàn quý phái / lịch lãm", hint: "Quyền quý", reason: "Tầng lớp thượng lưu." },
+
+    // ========== MỞ RỘNG 35: SỨC KHỎE & BỆNH TẬT ==========
+    "khỏe mạnh": { type: "UPGRADE", new: "cường tráng / dẻo dai / sung mãn / tràn đầy sinh lực", hint: "Tốt", reason: "Năng động." },
+    "ốm yếu": { type: "UPGRADE", new: "bệnh tật / tàn tạ / héo hon / rũ rượi", hint: "Xấu", reason: "Bi thương." },
+    "bệnh": { type: "UPGRADE", new: "cơn đau / chứng bệnh / trọng bệnh / nan y", hint: "Ốm", reason: "Gần cái chết." },
+
+    // ========== MỞ RỘNG 36: NGHỀ NGHIỆP ==========
+    "thầy giáo": { type: "UPGRADE", new: "người lái đò / kỹ sư tâm hồn / người gieo chữ / nghệ sĩ của tương lai", hint: "Tôn vinh", reason: "Vĩ đại." },
+    "bác sĩ": { type: "UPGRADE", new: "lương y / người đấu với tử thần / chiến bĩ áo trắng", hint: "Cứu chữa", reason: "Nhân đạo." },
+    "kỹ sư": { type: "UPGRADE", new: "người kiến tạo / xây đắp tương lai", hint: "Xây dựng", reason: "Sáng tạo." },
+    "nông dân": { type: "UPGRADE", new: "người cày / chủ nhân của đồng đất", hint: "Chân chất", reason: "Dân dã." },
+
+    // ========== MỞ RỘNG 37: ĐỒ VẬT HÀNG NGÀY (BIỂU TƯỢNG) ==========
+    "chiếc khăn": { type: "UPGRADE", new: "khăn quàng / khăn tay / kỷ vật / tình nhân", hint: "Nhỏ", reason: "Kỷ niệm." },
+    "chiếc mũ": { type: "UPGRADE", new: "vương miện / nón / đầu đội / che chắn", hint: "Cơ bản", reason: "Bảo vệ." },
+    "đôi dép": { type: "UPGRADE", new: "đôi hài / giày dép / bước chân", hint: "Đi lại", reason: "Hành trình." },
+    "cái bát": { type: "UPGRADE", new: "chén / bát đĩa / cơm ăn", hint: "Ẩm thực", reason: "Sống." },
+    "cốc nước": { type: "UPGRADE", new: "ly nước / làn hơi mát / giải khát", hint: "Uống", reason: "Sinh hoạt." },
+
+    // ========== MỞ RỘNG 38: HÀNH VI TÌNH CẢM ==========
+    "ôm": { type: "UPGRADE", new: "ghì chặt / siết / giữ chặt / dang tay", hint: "Thân mật", reason: "Yêu thương." },
+    "hôn": { type: "UPGRADE", new: "thơm / nụ hôn / chạm môi / hít hà", hint: "Lãng mạn", reason: "Say đắm." },
+    "vuốt ve": { type: "UPGRADE", new: "ân cần / trìu mến / mơn trớn / thương yêu", hint: "Nhẹ nhàng", reason: "Quan tâm." },
+    "nắm tay": { type: "UPGRADE", new: "cầm tay / dìu dắt / khoác tay", hint: "Chở che", reason: "Sẻ chia." },
+
+    // ========== MỞ RỘNG 39: CẢNH QUAN TRONG NHÀ ==========
+    "bếp": { type: "UPGRADE", new: "gian bếp / bếp lửa / tổ ấm / nồi cơm", hint: "Ấm cúng", reason: "Gia đình." },
+    "giường": { type: "UPGRADE", new: "giấc ngủ / chăn gối / nơi nghỉ ngơi", hint: "Thư giãn", reason: "Riêng tư." },
+    "bàn thờ": { type: "UPGRADE", new: "nơi tưởng niệm / khói hương / linh thiêng", hint: "Thờ cúng", reason: "Tâm linh." },
+    "sân vườn": { type: "UPGRADE", new: "khu vườn / cảnh quan / lá cây", hint: "Xanh", reason: "Thư thái." },
+    "gác xép": { type: "UPGRADE", new: "trên gác / gác lửng / kho báu", hint: "Chứa đồ", reason: "Bí mật." },
+
+    // ========== MỞ RỘNG 40: PHƯƠNG TIỆN ==========
+    "xe đạp": { type: "UPGRADE", new: "xe cà tàng / xe thồ / chiếc xích lô / lốc cốc", hint: "Bình dân", reason: "Kỷ niệm." },
+    "xe máy": { type: "UPGRADE", new: "xe phân khối / xe tay ga / vroom vroom", hint: "Hiện đại", reason: "Năng động." },
+    "ô tô": { type: "UPGRADE", new: "siêu xe / xe hơi / tứ bánh", hint: "Sang trọng", reason: "Xa hoa." },
+    "tàu hỏa": { type: "UPGRADE", new: "đoàn tàu / đường ray / xình xịch", hint: "Du lịch", reason: "Chia ly." },
+
+    // ========== MỞ RỘNG 41: CẢM GIÁC CĂNG THẲNG ==========
+    "hồi hộp": { type: "UPGRADE", new: "lo lắng / thấp thỏm / đứng ngồi không yên", hint: "Sốt ruột", reason: "Cao trào." },
+    "sợ run": { type: "UPGRADE", new: "khiếp sợ / lạnh sống lưng / rùng mình", hint: "Run sợ", reason: "Ám ảnh." },
+    "bức bối": { type: "UPGRADE", new: "khó thở / ngột ngạt / tù túng", hint: "Oxy", reason: "Bí bách." },
+
+    // ========== MỞ RỘNG 42: TÌNH CẢM GIA ĐÌNH ==========
+    "cha": { type: "UPGRADE", new: "người sinh thành / trụ cột / bóng cả / phụ thân", hint: "Kính yêu", reason: "Vai trò." },
+    "mẹ": { type: "UPGRADE", new: "mẫu thân / người cho con bú / bầu sữa nóng / trái tim gia đình", hint: "Bao dung", reason: "Yêu thương vô bờ." },
+    "anh trai": { type: "UPGRADE", new: "đàn anh / chỗ dựa / huynh", hint: "Bảo bọc", reason: "Gương mẫu." },
+    "em gái": { type: "UPGRADE", new: "em yêu / cô gái nhỏ / bông hoa nhà", hint: "Dễ thương", reason: "Bé bỏng." },
+
+    // ========== MỞ RỘNG 43: HÀNH ĐỘNG CỐT TRUYỆN (ĐIỂN HÌNH) ==========
+    "gặp gỡ": { type: "UPGRADE", new: "hội ngộ / tái ngộ / chạm mặt / gặp lại", hint: "Cuộc hẹn", reason: "Định mệnh." },
+    "chia tay": { type: "UPGRADE", new: "ly biệt / giã từ / tiễn biệt / dứt áo ra đi", hint: "Mất mát", reason: "Buồn." },
+    "chiến đấu": { type: "UPGRADE", new: "giao tranh / gây chiến / đánh nhau / sinh tử", hint: "Xung đột", reason: "Kịch tính." },
+    "tha thứ": { type: "UPGRADE", new: "dung tha / bỏ qua / không chấp nhất", hint: "Cao thượng", reason: "Nhân đạo." },
+    "trả thù": { type: "UPGRADE", new: "báo thù / trả đũa / ăn miếng trả miếng / căm hờn", hint: "Tiêu cực", reason: "Mâu thuẫn." },
+
+    // ========== MỞ RỘNG 44: TÍNH CÁCH (TỪ ĐIỂN TÂM LÝ) ==========
+    "tốt bụng": { type: "UPGRADE", new: "lương thiện / nhân từ / bác ái / có tâm", hint: "Đức hạnh", reason: "Nhân văn." },
+    "xấu xa": { type: "UPGRADE", new: "tàn ác / độc ác / nham hiểm / quỷ quyệt", hint: "Thủ đoạn", reason: "Phản diện." },
+    "dũng cảm": { type: "UPGRADE", new: "gan dạ / quả cảm / dám làm dám chịu", hint: "Anh hùng", reason: "Khâm phục." },
+    "nhát gan": { type: "UPGRADE", new: "hèn nhát / rụt rè / e dè", hint: "Không dám", reason: "Yếu đuối." },
+    "thông minh": { type: "UPGRADE", new: "sáng suốt / lanh lợi / trí tuệ", hint: "Nhanh nhạy", reason: "Ưu việt." },
+    "ngu ngốc": { type: "UPGRADE", new: "khờ dại / đần độn / hậu đậu", hint: "Chậm hiểu", reason: "Buồn cười." },
+    "khiêm tốn": { type: "UPGRADE", new: "nhũn nhặn / đúng mực / không kiêu căng", hint: "Đẹp đức", reason: "Đáng quý." },
+    "kiêu ngạo": { type: "UPGRADE", new: "tự cao / hợm hĩnh / coi thường", hint: "Xấu", reason: "Đáng ghét." },
+
+    // ========== MỞ RỘNG 45: KẾT CẤU BÀI VĂN ==========
+    "mở bài": { type: "SENTENCE", new: "lời dạo đầu / phần khởi / vào đề / giới thiệu", hint: "Bắt đầu", reason: "Thu hút." },
+    "thân bài": { type: "SENTENCE", new: "phần chính / ruột vấn đề / nội dung trọng tâm", hint: "Triển khai", reason: "Thuyết phục." },
+    "kết bài": { type: "SENTENCE", new: "lời kết / phần cuối / chốt lại / khép lại vấn đề", hint: "Chấm hết", reason: "Ấn tượng cuối." },
+
+    // ========== MỞ RỘNG 46: KỸ NĂNG VIẾT ==========
+    "lập luận": { type: "STYLE", new: "suy luận / lý lẽ / biện hộ / dùng lý do", hint: "Logic", reason: "Chắc chắn." },
+    "dẫn chứng": { type: "STYLE", new: "minh họa / ví dụ / cụ thể hóa / chứng cớ", hint: "Bằng chứng", reason: "Sống động." },
+    "phân tích": { type: "STYLE", new: "mổ xẻ / bóc tách / chia thành phần / thẩm định", hint: "Chi tiết", reason: "Sâu." },
+    "bình luận": { type: "STYLE", new: "nhận xét / bàn bạc / đánh giá / bình phẩm", hint: "Quan điểm", reason: "Sắc sảo." },
+
+        // ========== MỞ RỘNG 47: TRẠNG THÁI TÂM LÝ PHỨC HỢP ==========
+    "bối rối": { type: "UPGRADE", new: "luống cuống / lúng túng / hổ thẹn / mất tự nhiên / chưa kịp định thần", hint: "Rối ren", reason: "Thể hiện sự ngượng ngùng hoặc bất ngờ." },
+    "hoang mang": { type: "UPGRADE", new: "choáng váng / mất phương hướng / như lạc vào mê cung / bấn loạn / thất thần", hint: "Không định hướng", reason: "Tạo trạng thái khủng hoảng tinh thần." },
+    "thất vọng": { type: "UPGRADE", new: "vỡ mộng / chán chường / buông xuôi / hụt hẫng / niềm tin tan vỡ", hint: "Hy vọng không thành", reason: "Dẫn đến bi kịch hoặc buông xuôi." },
+    "mặc cảm": { type: "UPGRADE", new: "tự ti / hổ thẹn / e dè / cảm giác không xứng đáng / gặm nhấm", hint: "So sánh thua thiệt", reason: "Tạo nội tâm phức tạp." },
+    "hãnh diện": { type: "UPGRADE", new: "tự hào / mãn nguyện / vênh váo / kiêu hãnh / vui sướng vì bản thân", hint: "Thỏa mãn cái tôi", reason: "Thể hiện nhân cách hoặc thành tựu." },
+    "ghen tị": { type: "UPGRADE", new: "ghen ghét / đố kỵ / cay cú / khó chịu vì người khác hơn mình", hint: "So sánh tiêu cực", reason: "Tạo xung đột ngầm." },
+    "ghét bỏ": { type: "UPGRADE", new: "ruồng rẫy / xa lánh / quay lưng / khinh miệt / chán ghét tận đáy lòng", hint: "Từ chối hoàn toàn", reason: "Thể hiện mâu thuẫn cực độ." },
+    "yêu thương": { type: "UPGRADE", new: "nâng niu / trân trọng / che chở / dang rộng vòng tay / bao dung tất cả", hint: "Cảm xúc gia đình", reason: "Gắn kết con người." },
+
+    // ========== MỞ RỘNG 48: ĐẶC TẢ CẢNH THIÊN NHIÊN KỲ VĨ ==========
+    "thác nước": { type: "UPGRADE", new: "dòng thác trắng xóa / suối chảy cuồn cuộn / dòng nước đổ ào ào / thác gầm thét / bọt tung trắng", hint: "Hùng vĩ", reason: "Tạo chiều sâu không gian và sức mạnh." },
+    "hang động": { type: "UPGRADE", new: "vòm đá kỳ bí / lòng đất tối thẳm / cung điện ngầm / nơi cất giữ bí mật / miệng núi lửa ngủ", hint: "Bí ẩn", reason: "Gợi khám phá." },
+    "sa mạc": { type: "UPGRADE", new: "biển cát mênh mông / vùng đất chết / nơi không dung thứ / cồn cát nhấp nhô / ốc đảo le lói", hint: "Khắc nghiệt", reason: "Cô độc, sinh tồn." },
+    "đại dương": { type: "UPGRADE", new: "đại dương bao la / vực sâu thăm thẳm / sóng vỗ nhịp nhàng / nơi cưu mang muôn loài", hint: "Bao dung và hùng vĩ", reason: "Sự sống và hủy diệt." },
+    "bầu trời đêm": { type: "UPGRADE", new: "vòm trời đen thăm thẳm / thiên hà vô tận / dải ngân hà lung linh / những vì sao lấp lánh", hint: "Vũ trụ", reason: "Gợi chiêm nghiệm." },
+
+    // ========== MỞ RỘNG 49: CẢNH VẬT ĐỜI THƯỜNG (LÀNG QUÊ) ==========
+    "con đê": { type: "UPGRADE", new: "bờ đê quanh co / chân đê cỏ mọc / nơi hóng mát / lưng đê dài hun hút / ngăn dòng nước lũ", hint: "Quê hương", reason: "Tuổi thơ, sự bảo vệ." },
+    "cánh đồng lúa": { type: "UPGRADE", new: "biển lúa vàng / đồng lúa trĩu nặng / sóng lúa nhấp nhô / hương lúa non thơm", hint: "No ấm", reason: "Sự cần cù, thành quả." },
+    "giếng làng": { type: "UPGRADE", new: "giếng nước mát / bờ giếng rêu phong / đầu làng có giếng / nơi gặp gỡ", hint: "Kỷ niệm", reason: "Sự gắn kết cộng đồng." },
+    "sân đình": { type: "UPGRADE", new: "khoảng đất rộng / cây đa cổ thụ / nơi hội họp / mái đình xưa", hint: "Văn hóa", reason: "Cội nguồn." },
+    "chợ quê": { type: "UPGRADE", new: "chợ phiên / họp chợ / ngày chợ tết / nơi mua bán linh đình", hint: " Í ồn", reason: "Cuộc sống dân dã." },
+
+    // ========== MỞ RỘNG 50: CẢNH VẬT THÀNH THỊ (PHỐ XÁ) ==========
+    "đường phố đông đúc": { type: "UPGRADE", new: "phố xá tấp nập / dòng người xuôi ngược / xe cộ nườm nượp / phố chợ ồn ào", hint: "Sôi động", reason: "Nhịp sống hối hả." },
+    "phố cổ": { type: "UPGRADE", new: "phố cũ rêu phong / mái ngói rêu thời gian / di sản kiến trúc / nơi lưu giữ ký ức", hint: "Hoài niệm", reason: "Xưa cũ." },
+    "biệt thự cũ": { type: "UPGRADE", new: "dinh thự bỏ hoang / khu vườn rậm rạp / nỗi cô đơn trong lòng phố", hint: "Sang trọng nhưng hiu quạnh", reason: "Sự xuống cấp." },
+    "công viên": { type: "UPGRADE", new: "khoảng xanh giữa phố / nơi thư giãn / những ghế đá tâm tình / mảng xanh đô thị", hint: "Nghỉ ngơi", reason: "Yên bình trong ồn ào." },
+    "nhà cao tầng": { type: "UPGRADE", new: "toà nhà chọc trời / kính sáng loá / hiện đại và lạnh lẽo", hint: "Phát triển", reason: "Xa hoa nhưng xa cách." },
+
+    // ========== MỞ RỘNG 51: CÁC SỰ KIỆN TRONG ĐỜI NGƯỜI ==========
+    "sinh nhật": { type: "UPGRADE", new: "ngày lễ của riêng tôi / mốc thời gian / ngày ra đời / khoảnh khắc kỷ niệm", hint: "Vui vầy", reason: "Tô đậm niềm vui hoặc nỗi cô đơn." },
+    "đám cưới": { type: "UPGRADE", new: "hôn lễ / ngày vui trọng đại / lễ thành hôn / nên duyên vợ chồng", hint: "Hạnh phúc", reason: "Gắn bó." },
+    "đám tang": { type: "UPGRADE", new: "lễ tiễn biệt / người ra đi mãi mãi / khói hương nghi ngút / nơi chốn cuối cùng", hint: "Buồn", reason: "Sự mất mát." },
+    "chuyển nhà": { type: "UPGRADE", new: "đổi chốn ở / bước ngoặt / dọn đi/ xa cách", hint: "Thay đổi không gian", reason: "Khởi đầu mới hoặc rời xa." },
+    "ra trường": { type: "UPGRADE", new: "tốt nghiệp / chia tay mái trường / kết thúc tuổi học sinh / bước vào đời", hint: "Trưởng thành", reason: "Nuối tiếc." },
+
+    // ========== MỞ RỘNG 52: TẢ TẢN MẠN (THIÊN NHIÊN) ==========
+    "khói": { type: "UPGRADE", new: "làn khói lam / khói bếp / khói thuốc / nghi ngút / uốn lượn", hint: "Mờ ảo", reason: "Thi vị hoặc ô nhiễm." },
+    "sương": { type: "UPGRADE", new: "sương mù dày đặc / sương đêm / giọt sương long lanh / sương mai", hint: "Buổi sớm", reason: "Mát mẻ, tinh khiết." },
+    "cầu vồng": { type: "UPGRADE", new: "vòng cung bảy sắc / nhịp cầu hy vọng / sau cơn mưa", hint: "Đẹp", reason: "Kiêu hãnh." },
+    "sa mù": { type: "UPGRADE", new: "không khí mờ đục / bụi che phủ / tầm nhìn hạn chế", hint: "Mất phương hướng", reason: "Ngột ngạt." },
+
+    // ========== MỞ RỘNG 53: TỪ NGỮ MIÊU TẢ MÀU SẮC CẢM XÚC ==========
+    "xanh da trời": { type: "UPGRADE", new: "xanh ngắt / xanh cao vời vợi / sắc trời thăm thẳm / xanh thanh bình", hint: "Dịu mát", reason: "Tự do." },
+    "đỏ chói": { type: "UPGRADE", new: "đỏ như son / đỏ rực lửa / sắc đỏ tương phùng / đỏ quạch", hint: "Mạnh mẽ", reason: "Nguy hiểm hoặc đam mê." },
+    "xanh lá mạ": { type: "UPGRADE", new: "xanh non / xanh tươi mát / sức sống tràn trề / màu của niềm tin", hint: "Phát triển", reason: "Màu hy vọng." },
+    "vàng ươm": { type: "UPGRADE", new: "vàng mật / vàng tươi / nắng vàng / vàng ươm quả ngọt", hint: "Ấm áp", reason: "Hạnh phúc." },
+
+    // ========== MỞ RỘNG 54: ĐẶC TẢ CON NGƯỜI DÂN TỘC THIỂU SỐ ==========
+    "bản làng": { type: "UPGRADE", new: "làng bản / nhà sàn / thung lũng / đỉnh núi mờ sương", hint: "Vùng cao", reason: "Hoang sơ." },
+    "váy áo dân tộc": { type: "UPGRADE", new: "bộ váy thổ cẩm / hoa văn sắc màu / y phục truyền thống", hint: "Trang phục", reason: "Bản sắc." },
+    "cồng chiêng": { type: "UPGRADE", new: "tiếng cồng ngân vọng / âm thanh huyền thoại/ nhạc lễ hội", hint: "Văn hóa Tây Nguyên", reason: "Tín ngưỡng." },
+
+    // ========== MỞ RỘNG 55: TỪ CHUYÊN NGÀNH SÂN KHẤU (KỊCH) ==========
+    "vở kịch": { type: "THEORY", new: "tuồng / hài kịch / bi kịch / kịch nói / lớp diễn", hint: "Thể loại kịch", reason: "Tăng tính nghệ thuật." },
+    "lớp kịch": { type: "THEORY", new: "cảnh diễn / phân đoạn / màn kịch / hồi kịch", hint: "Bố cục", reason: "Cao trào." },
+    "diễn xuất": { type: "THEORY", new: "nhập vai / hóa thân / biểu cảm trên sân khấu / tấu hài", hint: "Kỹ năng", reason: "Thành công." },
+
+    // ========== MỞ RỘNG 56: TỪ NGỮ GIẢI TRÍ, THỂ THAO ==========
+    "trận đấu": { type: "UPGRADE", new: "cuộc thư hùng / so tài / đối đầu / tranh cúp", hint: "Căng thẳng", reason: "Kịch tính." },
+    "bàn thắng": { type: "UPGRADE", new: "khoảnh khắc vàng / pha lập công / ghi điểm / phá lưới", hint: "Thành công", reason: "Vỡ oà." },
+    "cổ động viên": { type: "UPGRADE", new: "khán giả cuồng nhiệt / người hâm mộ / fan cứng", hint: "Ủng hộ", reason: "Niềm tin." },
+
+    // ========== MỞ RỘNG 57: LÀNG NGHỀ TRUYỀN THỐNG ==========
+    "làng gốm": { type: "UPGRADE", new: "xưởng gốm / bàn xoay / nung lửa / bát đàn đất", hint: "Sản xuất", reason: "Tinh xảo." },
+    "làng lụa": { type: "UPGRADE", new: "thớ tơ vàng / khung cửi / dệt lụa", hint: "Tơ tằm", reason: "Cao cấp." },
+    "làng rèn": { type: "UPGRADE", new: "tiếng búa đe / lò rèn lửa / sắt nung đỏ", hint: " Mạnh mẽ", reason: "Lao động vất vả." },
+
+    // ========== MỞ RỘNG 58: ĐẶC SẢN ẨM THỰC ==========
+    "phở": { type: "UPGRADE", new: "món quốc hồn quốc túy / nước dùng xương hầm / bánh phở trắng / hương thơm đặc biệt", hint: "Ẩm thực VN", reason: "Thương hiệu." },
+    "bánh mì": { type: "UPGRADE", new: " bánh mì kẹp thịt / ổ bánh giòn tan / thức ăn đường phố", hint: "Fast food VN", reason: "Từng bước thế giới." },
+
+    // ========== MỞ RỘNG 59: CÁC CÂU NÓI CỬA MIỆNG NHÂN VẬT ==========
+    "nói lắp": { type: "STYLE", new: "ấp úng / ngập ngừng / ậm ờ / cà lăm", hint: "Bối rối", reason: "Khắc hoạ tính cách nhút nhát." },
+    "la hét": { type: "STYLE", new: "thét lên / gào thét / hét toáng / hò hét / thét", hint: "to tiếng", reason: "Giận dữ hoảng sợ." },
+    "thầm thì": { type: "STYLE", new: "thì thầm / khe khẽ / nỉ non / nhỏ nhẻ", hint: "Nhẹ", reason: "Bí mật." },
+
+    // ========== MỞ RỘNG 60: LỜI KẾT ĐẦY CHẤT THƠ ==========
+    "sống mãi": { type: "SENTENCE", new: "còn mãi với thời gian / in dấu trong lòng độc giả / trường tồn / trở thành huyền thoại", hint: "Kết thúc", reason: "Tác phẩm vĩ đại." },
+    "lắng lại": { type: "SENTENCE", new: "dư ba / âm vọng của một thời / nỗi niềm còn ở lại / để đời suy ngẫm", hint: "Suy tư", reason: "Mở." },
+    "khép lại": { type: "SENTENCE", new: "hạ màn / kết thúc hành trình / lời cuối / dấu chấm hết", hint: "Kết thúc", reason: "Bỏ ngỏ hoặc trọn vẹn." },
+
+        // ========== MỞ RỘNG 61: TRẠNG THÁI THỜI TIẾT CỰC ĐOAN ==========
+    "nắng gắt": { type: "UPGRADE", new: "nắng như thiêu như đốt / mặt đất bỏng rát / hơi lửa từ bầu trời / nắng đổ lửa / chói chang đến chói mắt", hint: "Cực nóng", reason: "Gợi cảm giác khắc nghiệt, mệt mỏi." },
+    "mưa to": { type: "UPGRADE", new: "trút nước / xối xả / mưa như thác đổ / nước trắng xóa cả bầu trời / trận mưa giông dữ dội", hint: "Cực mạnh", reason: "Tạo kịch tính, cuốn trôi." },
+    "gió mạnh": { type: "UPGRADE", new: "giông tố / cuồng phong / gió hú như sói tru / gió làm cong cây cối / lốc xoáy", hint: "Bão", reason: "Sự hủy diệt." },
+    "rét buốt": { type: "UPGRADE", new: "cắt da cắt thịt / buốt đến tận xương tủy / giá lạnh thấu tâm can / lạnh như cõi chết", hint: "Cực lạnh", reason: "Cô đơn, tuyệt vọng." },
+    "sương mù dày": { type: "UPGRADE", new: "không thể thấy gì / màn sương bí ẩn / sương như bức tường / lạc lối trong sương", hint: "Mù mịt", reason: "Gợi sự mơ hồ, mất phương hướng." },
+
+    // ========== MỞ RỘNG 62: CẢM XÚC VỀ THỜI GIAN (TRIẾT LÝ) ==========
+    "thời gian trôi nhanh": { type: "UPGRADE", new: "thấm thoắt / phút chốc / khắc khoải / tựa ngựa phi qua song cửa / không chờ đợi ai", hint: "Sự ngắn ngủi", reason: "Đáng quý từng giây." },
+    "thời gian ngưng đọng": { type: "UPGRADE", new: "khoảnh khắc bất tử / lặng như tờ / giây phút ấy kéo dài vô tận / ngừng lại trong ký ức", hint: "Chậm", reason: "Để tận hưởng." },
+    "tuổi trẻ qua đi": { type: "UPGRADE", new: "thanh xuân vụt tắt / tuổi hai mươi chưa kịp nói lời từ biệt / xuân sắc phai tàn / một thời hoa mộng bỏ lại", hint: "Nuối tiếc", reason: "Hoài niệm." },
+
+    // ========== MỞ RỘNG 63: HÌNH ẢNH HOÁN DỤ (METONYMY) TIẾNG VIỆT ==========
+    "bàn tay vàng": { type: "UPGRADE", new: "người thợ tài hoa / nghệ nhân khéo léo / đôi bàn tay làm nên kỳ tích", hint: "Ẩn dụ cho kỹ năng", reason: "Tài năng xuất sắc." },
+    "đầu óc sáng": { type: "UPGRADE", new: "tư duy linh hoạt / không ngừng đổi mới / trí tuệ nhạy bén", hint: "Thông minh", reason: "Khả năng giải quyết." },
+    "mặt trận mới": { type: "UPGRADE", new: "cuộc chiến mới / lĩnh vực đấu tranh khác / thử thách cam go", hint: "Ẩn dụ chính trị", reason: "Nghĩa bóng." },
+    "ngọn gió mới": { type: "UPGRADE", new: "luồng sinh khí / thay đổi tích cực / cơn lốc cách tân", hint: "Đột phá", reason: "Làm mới." },
+
+    // ========== MỞ RỘNG 64: TẢ SỰ HỒI HỘP, KỊCH TÍNH ==========
+    "tim đập thình thịch": { type: "UPGRADE", new: "con tim nhảy múa / trống ngực dồn dập / lồng ngực như muốn vỡ", hint: "Lo lắng", reason: "Cao trào." },
+    "nín thở": { type: "UPGRADE", new: "căng thẳng / không dám thở / chờ đợi kết quả nóng bỏng", hint: "Cao điểm", reason: "Tột độ." },
+    "đổ mồ hôi hột": { type: "UPGRADE", new: "mồ hôi túa ra như tắm / ướt đẫm lưng áo / lo lắng tột cùng", hint: "Sợ hãi", reason: "Áp lực." },
+    "run lập cập": { type: "UPGRADE", new: "run như cầy sấy / rùng mình / bủn rủn chân tay", hint: "Cực sợ", reason: "Yếu đuối." },
+
+    // ========== MỞ RỘNG 65: ĐỘNG VẬT HOANG DÃ (BIỂU TƯỢNG MẠNH) ==========
+    "sói": { type: "UPGRADE", new: "kẻ săn mồi / hung thần bóng đêm / linh hồn man dại / cơn ác mộng", hint: "Dữ tợn", reason: "Tàn bạo, tham lam." },
+    "đại bàng": { type: "UPGRADE", new: "chúa tể bầu trời / sải cánh bay cao / mắt nhìn xa thẳm / tự do vút tận mây xanh", hint: "Uy lực", reason: "Sức mạnh, uy quyền." },
+    "rắn": { type: "UPGRADE", new: "bò sát quỷ quyệt / độc tố chết người / lột xác / tái sinh", hint: "Nguy hiểm", reason: "Xảo trá, bí ẩn." },
+    "sư tử": { type: "UPGRADE", new: "chúa sơn lâm / tiếng gầm vang núi rừng / bờm dũng mãnh", hint: "Vua", reason: "Sức mạnh tối thượng." },
+
+    // ========== MỞ RỘNG 66: CỎ CÂY HOA LÁ (SỰ SỐNG TỪNG GIỌT) ==========
+    "cây đa": { type: "UPGRADE", new: "cội nguồn / rễ to như cổ tay / bóng mát cuộc đời / linh hồn làng xóm", hint: "Cổ thụ", reason: "Thiêng liêng." },
+    "cây si": { type: "UPGRADE", new: "già cỗi / rễ chùm dài / bóng rợp / huyền thoại", hint: "Huyền bí", reason: "Ma mị." },
+    "hoa cúc": { type: "UPGRADE", new: "cánh vàng rực rỡ / mùa thu / lặng lẽ khoe sắc", hint: "Thanh cao", reason: "Trong trẻo." },
+    "hoa hồng": { type: "UPGRADE", new: "nét kiêu sa / cánh nhung / gai sắc nhọn / tình yêu nồng cháy", hint: "Lãng mạn", reason: "Đam mê." },
+    "cỏ dại": { type: "UPGRADE", new: "sinh sôi nảy nở / vươn lên nghịch cảnh / kiên cường / chẳng cần chăm bón", hint: "Bền bỉ", reason: "Sức sống mãnh liệt." },
+
+    // ========== MỞ RỘNG 67: TẢ SỰ THANH BÌNH TRONG THƠ MỘC ==========
+    "bình minh thức giấc": { type: "UPGRADE", new: "gà gáy sáng / bầy chim hót ran / ban mai thức dậy / bắt đầu một ngày mới", hint: "Tinh khôi", reason: "Yên ả." },
+    "hoàng hôn buông xuống làng": { type: "UPGRADE", new: "tiếng ồn lắng dần / khói lam chiều / trâu về hết / yên ả và lặng lẽ", hint: "Làng quê", reason: "Nhẹ nhàng." },
+    "cánh đồng lúa chín": { type: "UPGRADE", new: "sóng lúa reo / hương thoảng / mùi thơm của đất trời", hint: "Mùa vàng", reason: "Ngọt ngào." },
+
+    // ========== MỞ RỘNG 68: TRẠNG THÁI SỨC KHỎE (BỆNH TẬT) ==========
+    "sốt cao": { type: "UPGRADE", new: "cơn sốt hành hạ / nóng rang / mê sảng / lên cơn điên dại", hint: "Ốm", reason: "Hiểm nghèo." },
+    "kiệt sức": { type: "UPGRADE", new: "rã rời / chân tay bủn rủn / cạn năng lượng / muốn gục xuống", hint: "Mệt", reason: "Suy nhược." },
+    "hôn mê": { type: "UPGRADE", new: "bất tỉnh / chập chờn giữa sống và chết / vô tri", hint: "Nặng", reason: "Tử vong." },
+    "chảy máu": { type: "UPGRADE", new: "máu đỏ tươi / vết thương hở / tổn thương chưa lành", hint: "Đau đớn", reason: "Mất mát."},
+
+    // ========== MỞ RỘNG 69: VAI VẾ CỦA CÁC BẬC PHỤ HUYNH ==========
+    "người mẹ đơn thân": { type: "UPGRADE", new: "đảm đang tháo vát / một mình nuôi con / nỗi vất vả gồng gánh / tảo tần sớm hôm", hint: "Hy sinh", reason: "Cảm động." },
+    "người cha già": { type: "UPGRADE", new: "tóc bạc / lưng còng / bước chân chậm chạp / kho tàng ký ức", hint: "Tuổi già", reason: "Lưu luyến." },
+    "con cái hư": { type: "UPGRADE", new: "phá phách / không nghe lời / gây tai họa / gánh nặng gia đình", hint: "Thất vọng", reason: "Đau lòng." },
+
+    // ========== MỞ RỘNG 70: CÂY CỐI ĐẶC TRƯNG VÙNG MIỀN ==========
+    "dừa": { type: "UPGRADE", new: "cây đặc sản Bến Tre / bóng mát rợp trời / trái sai lúc lỉu / nước mát lành", hint: "Miền Tây", reason: "Thân thuộc." },
+    "cau": { type: "UPGRADE", new: "thân thẳng tắp / buồng cau xanh / quả cau nhuộm răng / biểu tượng yêu thương", hint: "Bắc bộ", reason: "Tình làng nghĩa xóm." },
+    "bàng": { type: "UPGRADE", new: "cây bàng trường học / xoè tán / lá đỏ mùa đông", hint: "Ký ức", reason: "Gợi niềm nhớ." },
+    "phượng": { type: "UPGRADE", new: "đỏ rực sân trường / tiếng ve / chia tay lớp học", hint: "Mùa hè", reason: "Náo nức." },
+
+    // ========== MỞ RỘNG 71: CÁC LOẠI NHÀ CỬA (BIỂU TƯỢNG) ==========
+    "nhà tranh": { type: "UPGRADE", new: "mái rạ / đơn sơ / tấm liếp / vách đất", hint: "Nghèo", reason: "Dân dã, dân gian." },
+    "nhà ngói": { type: "UPGRADE", new: "ghi lợp / tường gạch / khang trang / giữ ấm", hint: "Khá giả", reason: "Bình thường." },
+    "biệt thự": { type: "UPGRADE", new: "sang trọng / cổng sắt / vườn cảnh / giàu có", hint: "Xa hoa", reason: "Tầng lớp." },
+    "căn hộ": { type: "UPGRADE", new: "chung cư / chật hẹp / cạnh nhau / hiện đại nhưng xa cách", hint: "Đô thị", reason: "Bí bức." },
+
+    // ========== MỞ RỘNG 72: BIỂU TƯỢNG CỦA HẠNH PHÚC ==========
+    "nụ cười": { type: "UPGRADE", new: "nụ cười mãn nguyện / sự bình yên trên môi / đôi môi hé mở", hint: "Tươi vui", reason: "Ấm áp." },
+    "bàn ăn đầy đủ": { type: "UPGRADE", new: "sum họp gia đình / mâm cơm tối / những bữa cơm ấm cúng / no ấm", hint: "Đoàn viên", reason: "Yêu thương." },
+    "tiếng cười trẻ thơ": { type: "UPGRADE", new: "giòn tan / trong trẻo / vô tư lự / tương lai sáng", hint: "Vô lo", reason: "Hạnh phúc đời thường."},
+
+    // ========== MỞ RỘNG 73: BIỂU TƯỢNG CỦA ĐAU KHỔ ==========
+    "nước mắt": { type: "UPGRADE", new: "giọt lệ / khóc thầm / lăn dài trên má / mặn chát", hint: "Buồn", reason: "Xót xa, tuyệt vọng." },
+    "cái ôm chia tay": { type: "UPGRADE", new: "siết chặt / vĩnh biệt / khóc nghẹn / lưu luyến", hint: "Mất mát", reason: "Biệt ly." },
+    "nỗi nhớ": { type: "UPGRADE", new: "cồn cào / da diết / không nguôi / khắc khoải / ám ảnh", hint: "Thiếu vắng", reason: "Nhớ mong." },
+
+    // ========== MỞ RỘNG 74: SỰ KIỆN LỊCH SỬ ==========
+    "chiến tranh": { type: "UPGRADE", new: "khói lửa mịt mù / bom rơi / tàn phá / chia cắt", hint: "Đau thương", reason: "Mất mát." },
+    "hòa bình": { type: "UPGRADE", new: "độc lập / tự do / lá cờ bay / nhân dân hân hoan", hint: "Kết thúc chiến tranh", reason: "Niềm vui lớn." },
+    "anh hùng": { type: "UPGRADE", new: "bậc trung quân ái quốc / chiến sỹ / người hy sinh vì nước", hint: "Dũng cảm", reason: "Tự hào." },
+
+    // ========== MỞ RỘNG 75: VỀ LAO ĐỘNG SẢN XUẤT ==========
+    "cày ruộng": { type: "UPGRADE", new: "nhấp nhô / nắng đổ lửa / mồ hôi rơi / một nắng hai sương", hint: "Vất vả", reason: "Lương thực." },
+    "đánh bắt cá": { type: "UPGRADE", new: "thuyền ra khơi / sóng lớn / lưới nặng đầy tôm cá", hint: "Ngư nghiệp", reason: "Biển cả." },
+    "xây dựng": { type: "UPGRADE", new: "những toà nhà mọc lên / vữa hồ / gạch đá", hint: "Phát triển", reason: "Đổi mới." },
+
+    // ========== MỞ RỘNG 76: TÂM LINH, TÍN NGƯỠNG ==========
+    "chùa chiền": { type: "UPGRADE", new: "tiếng chuông ngân / khói hương / nơi bình an", hint: "Thanh tịnh", reason: "Tịnh tâm." },
+    "cúng bái": { type: "UPGRADE", new: "lễ vật / khấn vái / thành tâm cầu nguyện", hint: "Tín ngưỡng", reason: "Linh thiêng." },
+    "thánh thần": { type: "UPGRADE", new: "phù hộ độ trì / ban phước / quyền năng", hint: "Siêu nhiên", reason: "Niềm tin." },
+
+    // ========== MỞ RỘNG 77: CÁC LOẠI NGHỆ THUẬT (ÂM NHẠC, HỌA) ==========
+    "bức tranh": { type: "UPGRADE", new: "kiệt tác hội họa / màu sắc bố cục / góc nhìn của nghệ sĩ", hint: "Mỹ thuật", reason: "Thẩm mỹ." },
+    "bản nhạc": { type: "UPGRADE", new: "nốt trầm nốt bổng / giai điệu bay bổng / ca từ day dứt", hint: "Âm thanh", reason: "Cảm xúc." },
+    "múa": { type: "UPGRADE", new: "điệu múa uyển chuyển / uốn dẻo / những bước nhảy cuồng nhiệt", hint: "Chuyển động", reason: "Nhịp nhàng." },
+
+    // ========== MỞ RỘNG 78: CÔNG NGHỆ VÀ CUỘC SỐNG HIỆN ĐẠI ==========
+    "internet": { type: "UPGRADE", new: "thế giới ảo / mạng lưới toàn cầu / kết nối vạn nhà", hint: "Hiện đại", reason: "Tích cực và tiêu cực." },
+    "điện thoại thông minh": { type: "UPGRADE", new: "thiết bị cầm tay / kết nối mọi lúc / vừa gần vừa xa", hint: "Tiện ích", reason: "Cô đơn giữa đám đông." },
+    "mạng xã hội": { type: "UPGRADE", new: "cuộc sống ảo / thích và bình luận / ảo hóa thực tại", hint: "Ảo", reason: "Tích cực/tiêu cực." },
+
+    // ========== MỞ RỘNG 79: TỪ NGỮ TẢ SỰ GIÀU CÓ, SANG TRỌNG ==========
+    "xa hoa": { type: "UPGRADE", new: "đắt đỏ / tráng lệ / cầu kỳ / đẳng cấp thượng lưu", hint: "Sang", reason: "Phô trương." },
+    "lộng lẫy": { type: "UPGRADE", new: "lung linh / kim cương / dát vàng", hint: "Đẹp rực rỡ", reason: "Choáng ngợp." },
+    "sang trọng": { type: "UPGRADE", new: "quý phái / lịch lãm / không tì vết", hint: "Đẳng cấp", reason: "Tổng hòa." },
+
+    // ========== MỞ RỘNG 80: TỪ NGỮ TẢ SỰ NGHÈO KHÓ, TIỂU TỤY ==========
+    "túng thiếu": { type: "UPGRADE", new: "đói rách / cơm chẳng đủ ăn / áo không lành / bữa đói bữa no", hint: "Khổ", reason: "Xót xa." },
+    "rách rưới": { type: "UPGRADE", new: "quần áo vá víu / đầu trần chân đất / lếch thếch", hint: "Hèn mọn", reason: "Tội nghiệp." },
+    "tạp nham": { type: "UPGRADE", new: "lộn xộn / chật chội / dơ bẩn", hint: "Không gọn gàng", reason: "Mất vệ sinh."},
+
+    // ========== MỞ RỘNG 81: TRẠNG THÁI NGHỈ NGƠI, YÊN TĨNH ==========
+    "thư giãn": { type: "UPGRADE", new: "thảnh thơi / nhàn hạ / buông bỏ ưu phiền / tận hưởng giây phút", hint: "Không áp lực", reason: "Cân bằng cuộc sống." },
+    "tĩnh tâm": { type: "UPGRADE", new: "ngồi thiền / thoát tục / trống rỗng tạp niệm", hint: " Thiền", reason: "Thanh lọc." },
+    "ngủ say": { type: "UPGRADE", new: "giấc ngủ ngon / quên hết âu lo / chìm vào miền cổ tích", hint: "Ngủ", reason: "Sâu lắng." },
+
+    // ========== MỞ RỘNG 82: CÁC TRUYỀN THỐNG TỐT ĐẸP ==========
+    "uống nước nhớ nguồn": { type: "UPGRADE", new: "biết ơn / đền đáp / không quên công lao / từ biển nhỏ", hint: "Đạo lý", reason: "Nhân văn." },
+    "lá lành đùm lá rách": { type: "UPGRADE", new: "sẻ chia / giúp đỡ lẫn nhau / tình thương đồng loại", hint: "Tình người", reason: "Cao đẹp." },
+    "kính già yêu trẻ": { type: "UPGRADE", new: "lễ phép / dạy bảo / hiếu thảo", hint: "Văn hóa", reason: "ứng xử." },
+
+    // ========== MỞ RỘNG 83: CÁC CẢNH ĐẸP NỔI TIẾNG ==========
+    "vịnh Hạ Long": { type: "UPGRADE", new: "kỳ quan thiên nhiên / đảo đá vôi / nước trong xanh", hint: "Di sản", reason: "Tự hào." },
+    "phố cổ Hội An": { type: "UPGRADE", new: "đèn lồng rực rỡ / cổ kính / thương hồ xưa", hint: "Cũ", reason: "Du lịch." },
+    "Đà Lạt": { type: "UPGRADE", new: "thành phố sương mù / hoa nở khắp nơi / se lạnh", hint: "Tình yêu", reason: "Thơ mộng." },
+
+    // ========== MỞ RỘNG 84: TẢ MÙI VỊ RẤT ĐẶC TRƯNG ==========
+    "mùi khói": { type: "UPGRADE", new: "khét / thơm mùi rơm / gợi nhớ bếp chiều", hint: "Làng quê", reason: "Hoài niệm." },
+    "mùi đất": { type: "UPGRADE", new: "nồng nàn / mưa rào / mùi của sự sống", hint: "Thiên nhiên", reason: "Gần gũi." },
+    "mùi hoa sữa": { type: "UPGRADE", new: "nồng / chỉ xuất hiện vào thu / nỗi nhớ Hà Nội", hint: "Thủ đô", reason: "Đặc trưng." },
+
+    // ========== MỞ RỘNG 85: CÁC LOẠI THẢM HỌA ==========
+    "lũ lụt": { type: "UPGRADE", new: "nước dâng cao / nhấn chìm mọi thứ / mất mát", hint: "Thiên tai", reason: "Tang thương." },
+    "hạn hán": { type: "UPGRADE", new: "khô cằn / cháy lá / cây cỏ héo úa", hint: "Thiếu nước", reason: "Đói khổ." },
+    "động đất": { type: "UPGRADE", new: "rung chuyển / tan hoang / đổ nát", hint: "Kinh hoàng", reason: "Sức tàn phá." },
+
+    // ========== MỞ RỘNG 86: CÁC HOẠT ĐỘNG VUI CHƠI ==========
+    "lễ hội": { type: "UPGRADE", new: "tưng bừng / cờ hoa / múa hát / hò reo", hint: "Đông vui", reason: "Sum họp." },
+    "du lịch": { type: "UPGRADE", new: "khám phá / trải nghiệm / chân trời mới", hint: "Nghỉ ngơi", reason: "Mở mang." },
+    "thể thao": { type: "UPGRADE", new: "rèn luyện / khỏe khoắn / tranh tài", hint: "Sức khỏe", reason: "Đoàn kết." },
+
+    // ========== MỞ RỘNG 87: TẢ TRÍ TƯỞNG TƯỢNG, GIẤC MƠ ==========
+    "mơ mộng": { type: "UPGRADE", new: "ảo mộng / mường tượng / bay bổng", hint: "Tưởng tượng", reason: "Sáng tạo." },
+    "lý tưởng": { type: "UPGRADE", new: "hướng tới / khát khao cháy bỏng", hint: "Cao cả", reason: "Lẽ sống." },
+    "ảo tưởng": { type: "UPGRADE", new: "vỡ mộng / không thực tế / xa vời", hint: "Sai lầm", reason: "Bi kịch." },
+
+    // ========== MỞ RỘNG 88: CẢNH QUAN SAU CHIẾN TRANH ==========
+    "đổ nát": { type: "UPGRADE", new: "tàn tích / không còn gì đứng vững / hoang tàn", hint: "Tang thương", reason: "Mất mát." },
+    "hòa bình lập lại": { type: "UPGRADE", new: "cờ bay / người về làng / bắt đầu lại", hint: "Hồi sinh", reason: "Hy vọng." },
+    "nghĩa trang liệt sĩ": { type: "UPGRADE", new: "hàng bia trắng / khắc tên / sự hy sinh cao cả", hint: "Biết ơn", reason: "Tưởng nhớ." },
+
+    // ========== MỞ RỘNG 89: VỀ ÁNH SÁNG VÀ BÓNG TỐI (Nghệ thuật tạo hình) ==========
+    "tương phản": { type: "THEORY", new: "đen trắng / sáng tối / mâu thuẫn nghệ thuật", hint: "Thủ pháp", reason: "Đối lập gây ấn tượng." },
+    "ánh sáng le lói": { type: "UPGRADE", new: "tia hy vọng nhỏ nhoi / chút sáng cuối đường hầm", hint: "Mờ", reason: "Báo hiệu." },
+    "bóng tối bao trùm": { type: "UPGRADE", new: "u tối / vây phủ / ngự trị", hint: "Ác mộng", reason: "Sợ hãi." },
+
+    // ========== MỞ RỘNG 90: CUỘC SỐNG GIA ĐÌNH HẠNH PHÚC ==========
+    "cả nhà quây quần": { type: "UPGRADE", new: "sum họp / vui vầy / bên mâm cơm", hint: "Ấm cúng", reason: "Hạnh phúc thường nhật." },
+    "chăm sóc nhau lúc ốm": { type: "UPGRADE", new: "tận tình / nâng giấc / yêu thương thể hiện", hint: "Tình cảm", reason: "Sẻ chia." },
+    "dạy con": { type: "UPGRADE", new: "uốn nắn / dạy dỗ / nên người", hint: "Trách nhiệm", reason: "Tương lai." }
+
+    
+};
+
+ const sortedAIKeys = Object.keys(LITERARY_DATABASE).sort((a, b) => b.length - a.length);
+
+ /* --- 2. HỆ THỐNG ĐIỀU KHIỂN CON TRỎ (Chỉ giữ lại 1 bộ duy nhất) --- */
+function getCaret(el) {
+    let pos = 0; const sel = window.getSelection();
+    if (sel.rangeCount !== 0) {
+        const range = sel.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(el);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        pos = preCaretRange.toString().length;
+    }
+    return pos;
+}
+
+function setCaret(el, pos) {
+    let charCount = 0; const range = document.createRange();
+    const nodeStack = [el]; let node, stop = false;
+    while (!stop && (node = nodeStack.pop())) {
+        if (node.nodeType === 3) {
+            const nextCharCount = charCount + node.length;
+            if (pos >= charCount && pos <= nextCharCount) {
+                range.setStart(node, pos - charCount);
+                range.collapse(true);
+                stop = true;
+            }
+            charCount = nextCharCount;
+        } else {
+            let i = node.childNodes.length;
+            while (i--) nodeStack.push(node.childNodes[i]);
+        }
+    }
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+}
+
+/* --- 3. HÀM QUÉT NÂNG CẤP (Tối ưu Regex) --- */
+function masterScanner() {
+    const editor = document.getElementById('essay-editor');
+    const pos = getCaret(editor); 
+    let text = editor.innerText;
+    if (!text.trim()) return;
+
+    document.getElementById('loader').style.display = 'flex';
+
+    setTimeout(() => {
+        let processedHTML = text;
+        let vocabCount = 0;
+        const timeline = document.getElementById('results-timeline');
+        timeline.innerHTML = "";
+
+        // Sắp xếp key dài trước để tránh lỗi thay thế từ con (ví dụ 'nhân vật' trước 'nhân')
+        const sortedKeys = Object.keys(LITERARY_DATABASE).sort((a, b) => b.length - a.length);
+
+        sortedKeys.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            if (regex.test(text)) {
+                vocabCount++;
+                const d = LITERARY_DATABASE[word];
+                // Chỉ highlight, không làm hỏng cấu trúc văn bản
+                processedHTML = processedHTML.replace(regex, (match) => {
+                    return `<span class="ai-marker upgrade" data-new="${d.new}" data-hint="${d.hint}" data-reason="${d.reason}">${match}</span>`;
+                });
+
+                timeline.innerHTML += `
+                    <div class="glass p-4 rounded-xl border-l-4 border-indigo-500 animate-in slide-in-from-right">
+                        <p class="text-[10px] font-black text-indigo-400 uppercase">${word} → ${d.new}</p>
+                        <p class="text-white text-[11px] mt-1">${d.reason}</p>
+                    </div>`;
+            }
+        });
+
+        editor.innerHTML = processedHTML;
+        const stats = performCalculation(text);
+        updateBoardUI(stats, vocabCount);
+        
+        // Cố gắng khôi phục caret (Lưu ý: Có thể vẫn lệch nhẹ do span tag)
+        try { setCaret(editor, pos); } catch(e) {}
+        
+        document.getElementById('loader').style.display = 'none';
+        showNeuralToast("Thẩm định hoàn tất!", "upgrade");
+    }, 800);
+}
+
+        /* --- XỬ LÝ TEXT & TÍNH TOÁN --- */
+        function performCalculation(text) {
+    const words = text.trim().split(/\s+/).filter(w => w).length;
+    // Regex quét các từ khóa lý luận văn học
+    const hasLyLuan = /(tư tưởng|triết lý|quan niệm|giá trị|nhân sinh|lý luận|bản chất|nghệ thuật|thi pháp|hình tượng)/gi.test(text);
+    const hasDanChung = /(ví dụ|như|điển hình|tác phẩm|nhân vật|dẫn chứng|minh chứng)/gi.test(text);
+
+    let score = 1.0;
+    if (words > 100) score += 2.0;
+    if (words > 300) score += 2.0;
+    if (words > 600) score += 2.0;
+    if (hasLyLuan) score += 1.5;
+    if (hasDanChung) score += 1.5;
+
+    return { wc: words, score: Math.min(10, score), hasLyLuan, hasDanChung };
+}
+
+function updateBoardUI(s, vocabCount) {
+    document.getElementById('wc').innerText = s.wc;
+    document.getElementById('score-ui').innerText = s.score.toFixed(1);
+    document.getElementById('academic-stat').innerText = vocabCount + " từ";
+    document.getElementById('logic-level').innerText = s.hasLyLuan ? "Sâu sắc" : "Cơ bản";
+    
+    // Cập nhật Checklist màu sắc
+    const updateCheck = (id, status) => {
+        const el = document.getElementById(id);
+        el.className = `flex items-center gap-3 text-[11px] font-bold ${status ? 'text-emerald-400' : 'text-slate-500'}`;
+        el.querySelector('span').innerText = status ? '✅' : '💡';
+    };
+
+    updateCheck('check-ly-luan', s.hasLyLuan);
+    updateCheck('check-dan-chung', s.hasDanChung);
+    updateCheck('check-lap-tu', s.wc > 50); // Giả định bài dài là ít lặp
+
+    // Vẽ Radar
+    drawRadar([s.score, Math.min(10, vocabCount), Math.min(10, s.wc/100), s.hasLyLuan ? 9 : 4]);
+}
+
+        function updateCheck(el, status) {
+            el.className = `flex items-center gap-3 text-[11px] font-bold ${status ? 'text-emerald-400' : 'text-slate-500'}`;
+            el.querySelector('span').innerText = status ? '✅' : '💡';
+        }
+
+        /* --- UTILS --- */
+        function copyEssay() {
+            const text = document.getElementById('essay-editor').innerText;
+            navigator.clipboard.writeText(text).then(() => showNeuralToast("Đã sao chép văn bản!", "upgrade"));
+        }
+
+        function showNeuralToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = `fixed bottom-8 right-8 px-6 py-4 glass rounded-2xl z-[10001] animate-in slide-in-from-bottom border-l-4 ${type==='upgrade'?'border-indigo-500':'border-red-500'}`;
+            t.innerHTML = `<p class="text-xs font-bold text-white">${msg}</p>`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        function clearAll() { document.getElementById('neural-confirm').classList.remove('hidden'); }
+        function closeConfirm() { document.getElementById('neural-confirm').classList.add('hidden'); }
+        function executeClear() {
+            document.getElementById('essay-editor').innerHTML = "";
+            document.getElementById('topic-input').value = "";
+            updateBoardUI({wc:0, score:0, hasLyLuan:false, hasDanChung:false});
+            closeConfirm();
+        }
+
+        /* --- TOOLTIP POSITIONING --- */
+        const tooltip = document.getElementById('tooltip');
+        document.addEventListener('mouseover', e => {
+            if (e.target.classList.contains('ai-marker')) {
+                const d = e.target.dataset;
+                tooltip.innerHTML = `<b class="block text-indigo-400 text-[9px] mb-1 uppercase">Gợi ý nâng cấp</b><p class="text-white font-bold text-sm mb-1">→ ${d.new}</p><p class="text-slate-400 leading-relaxed">${d.hint}</p>`;
+                tooltip.style.display = 'block'; tooltip.style.opacity = '1';
+            }
+        });
+        document.addEventListener('mousemove', e => {
+            if(tooltip.style.display === 'block') {
+                tooltip.style.left = (e.clientX + 20) + 'px';
+                tooltip.style.top = (e.clientY + 20) + 'px';
+            }
+        });
+        document.addEventListener('mouseout', e => {
+            if (e.target.classList.contains('ai-marker')) tooltip.style.display = 'none';
+        });
+
+        /* --- EVENT LISTENERS --- */
+        document.getElementById('essay-editor').addEventListener('input', e => {
+            const text = e.target.innerText;
+            document.getElementById('wc').innerText = text.trim().split(/\s+/).filter(w => w).length;
+        });
+
+    </script>
+
+    <!-- THANH BĂNG CỐ ĐỊNH DƯỚI ĐÁY MÀN HÌNH -->
+    <div class="fixed bottom-0 left-0 right-0 bg-slate-950/40 backdrop-blur-md border-t border-white/5 py-1.5 z-[9999] pointer-events-none">
+        <p class="text-[9px] text-slate-500/80 uppercase tracking-[2px] text-center flex items-center justify-center gap-2">
+            <span>© 2026</span> 
+            <span class="w-[1px] h-2 bg-white/10"></span> 
+            <span>Thiết kế bởi <b class="text-indigo-400/70 font-extrabold">Cao Nguyễn Hồng Phi</b></span>
+        </p>
+        
+    </div>
+
+    <!-- MOBILE FAB -->
+    <div class="lg:hidden fixed bottom-12 right-6 z-[9999]">
+        <button onclick="masterScanner()" class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center shadow-2xl text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/></svg>
+        </button>
+    </div>
+</body>
+</html>
