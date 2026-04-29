@@ -201,6 +201,14 @@
     animation: shine-sweep 3s infinite;
 }
 
+#results-timeline .glass {
+    transition: transform 0.2s, background-color 0.2s;
+}
+#results-timeline .glass:hover {
+    transform: translateX(-5px); /* Nhô ra một chút khi di chuột vào */
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
     </style>
 </head>
 <body>
@@ -220,8 +228,8 @@
     <div class="flex items-center gap-3 group cursor-pointer" onclick="location.reload()">
         <div class="relative">
             <img src="https://i.ibb.co/JR0VsXrs/S-VANHOCVN.png" 
-                 alt="S-VANHOC Logo" 
-                 class="w-9 h-9 object-contain drop-shadow-[0_0_8px_rgba(244,114,182,0.3)] group-hover:scale-105 transition-transform duration-300">
+                alt="S-VANHOC Logo" 
+                class="w-9 h-9 object-cover rounded-xl drop-shadow-[0_0_8px_rgba(244,114,182,0.3)] group-hover:scale-105 transition-transform duration-300">
         </div>
         
         <div class="flex flex-col justify-center">
@@ -2031,53 +2039,95 @@ function masterScanner() {
     document.getElementById('loader').style.display = 'flex';
 
     setTimeout(() => {
-        let processedHTML = text;
-        let vocabCount = 0;
         const timeline = document.getElementById('results-timeline');
         timeline.innerHTML = "";
+        let vocabCount = 0;
+        let markerCount = 0; // Biến đếm để tạo ID duy nhất
 
-        // Sắp xếp key dài trước để tránh lỗi thay thế từ con (ví dụ 'nhân vật' trước 'nhân')
         const sortedKeys = Object.keys(LITERARY_DATABASE).sort((a, b) => b.length - a.length);
+        const pattern = new RegExp(`\\b(${sortedKeys.join('|')})\\b`, 'gi');
 
-        // Trong hàm masterScanner, tìm vòng lặp sortedKeys.forEach...
-        sortedKeys.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            if (regex.test(text)) {
+        const processedHTML = text.replace(pattern, (match) => {
+            const wordLower = match.toLowerCase();
+            const d = LITERARY_DATABASE[wordLower];
+            
+            if (d) {
                 vocabCount++;
-                const d = LITERARY_DATABASE[word];
-                
-                // Chuyển type thành class (VD: UPGRADE -> type-upgrade)
+                markerCount++;
                 const typeClass = "type-" + d.type.toLowerCase();
+                const uniqueId = `marker-${markerCount}`; // GIỮ LOGIC: ID để nhảy đến
 
-                processedHTML = processedHTML.replace(regex, (match) => {
-                    // Gán class động dựa trên loại từ
-                    return `<span class="ai-marker ${typeClass}" 
-                                data-type-name="${d.type}"
-                                data-new="${d.new}" 
-                                data-hint="${d.hint}" 
-                                data-reason="${d.reason}">${match}</span>`;
-                });
-                
-                // Cập nhật timeline bên phải với màu tương ứng
+                // 1. Logic Mới: Bảng dịch tên chuyên mục Tiếng Việt
+                const categoryNames = {
+                    "UPGRADE": "Nâng cấp từ vựng",
+                    "STYLE": "Sắc thái diễn đạt",
+                    "LOGIC": "Liên kết mạch lạc",
+                    "SENTENCE": "Cấu trúc câu văn",
+                    "THEORY": "Lý luận chuyên sâu",
+                    "POETRY": "Nhạc tính & Thơ ca"
+                };
+
+                // 2. GIỮ LOGIC: Danh mục mã màu cho thẻ (khớp với Tooltip)
+                const typeColors = {
+                    "UPGRADE": "#6366f1", "STYLE": "#f472b6", "LOGIC": "#10b981",
+                    "SENTENCE": "#10b981", "THEORY": "#fbbf24", "POETRY": "#06b6d4"
+                };
+
+                const borderColor = typeColors[d.type] || "#6366f1";
+                const vnCategory = categoryNames[d.type] || d.type; // Lấy tên Tiếng Việt
+
+                // 3. GIỮ LOGIC: Tạo thẻ đề xuất ở cột bên phải + CẬP NHẬT tên Tiếng Việt
                 timeline.innerHTML += `
-                    <div class="glass p-4 rounded-xl border-l-4 ${typeClass === 'type-upgrade' ? 'border-indigo-500' : 'border-rose-500'} animate-in slide-in-from-right">
-                        <p class="text-[8px] font-black opacity-50 uppercase">${d.type}</p>
-                        <p class="text-[10px] font-black text-white uppercase">${word} → ${d.new}</p>
+                    <div onclick="scrollToMarker('${uniqueId}')" 
+                         class="glass p-4 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-all active:scale-95 animate-in slide-in-from-right mb-3"
+                         style="border-color: ${borderColor}">
+                        <p class="text-[8px] font-black uppercase tracking-widest mb-1" style="color: ${borderColor}">
+                            ${vnCategory}
+                        </p>
+                        <p class="text-[10px] font-bold text-white uppercase">${match} <span class="opacity-40">→</span> ${d.new.split(' / ')[0]}</p>
+                        <p class="text-[9px] text-slate-400 mt-1 italic">${d.reason}</p>
                     </div>`;
+
+                // 4. GIỮ LOGIC: Trả về thẻ span có chứa ID để nhảy con trỏ đến
+                return `<span id="${uniqueId}" class="ai-marker ${typeClass}" 
+                              data-type-name="${d.type}"
+                              data-new="${d.new}" 
+                              data-hint="${d.hint}" 
+                              data-reason="${d.reason}">${match}</span>`;
             }
+            return match;
         });
 
         editor.innerHTML = processedHTML;
         const stats = performCalculation(text);
         updateBoardUI(stats, vocabCount);
         
-        // Cố gắng khôi phục caret (Lưu ý: Có thể vẫn lệch nhẹ do span tag)
         try { setCaret(editor, pos); } catch(e) {}
-        
         document.getElementById('loader').style.display = 'none';
         showNeuralToast("Thẩm định hoàn tất!", "upgrade");
     }, 800);
 }
+
+function scrollToMarker(id) {
+    const element = document.getElementById(id);
+    if (element) {
+        // 1. Cuộn đến vị trí của từ (nằm giữa màn hình)
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 2. Hiệu ứng nhấp nháy để người dùng dễ nhận biết từ đó ở đâu
+        element.style.transition = "all 0.3s";
+        element.style.boxShadow = "0 0 20px #fff, 0 0 30px #6366f1";
+        element.style.background = "rgba(255, 255, 255, 0.3)";
+        
+        setTimeout(() => {
+            element.style.boxShadow = "none";
+            element.style.background = "rgba(99, 102, 241, 0.1)"; // Trả về màu nền mặc định
+        }, 1500);
+    } else {
+        showNeuralToast("Không tìm thấy vị trí trong văn bản!", "error");
+    }
+}
+
 
         /* --- XỬ LÝ TEXT & TÍNH TOÁN --- */
         function performCalculation(text) {
@@ -2195,22 +2245,39 @@ function updateBoardUI(s, vocabCount) {
         document.addEventListener('mouseover', e => {
             if (e.target.classList.contains('ai-marker')) {
                 const d = e.target.dataset;
-                // Chuyển tên loại sang tiếng Việt để thân thiện
+                
+                // 1. Danh mục tên Tiếng Việt
                 const typeNames = {
                     "UPGRADE": "Nâng cấp từ ngữ",
                     "STYLE": "Sắc thái diễn đạt",
                     "LOGIC": "Liên kết mạch lạc",
+                    "SENTENCE": "Liên kết mạch lạc",
                     "THEORY": "Lý luận văn học",
-                    "POETRY": "Tính nhạc & Thơ ca",
-                    "SENTENCE": "Cấu trúc câu"
+                    "POETRY": "Tính nhạc & Thơ ca"
                 };
-                const vnType = typeNames[d.typeName] || "Gợi ý văn chương";
 
+                // 2. Danh mục mã màu (Khớp chính xác với màu gạch chân CSS)
+                const typeColors = {
+                    "UPGRADE": "#6366f1", // Màu tím Indigo
+                    "STYLE": "#f472b6",   // Màu hồng Rose
+                    "LOGIC": "#10b981",   // Màu xanh Emerald
+                    "SENTENCE": "#10b981",// Màu xanh Emerald
+                    "THEORY": "#fbbf24",  // Màu vàng Amber
+                    "POETRY": "#06b6d4"   // Màu xanh Cyan
+                };
+
+                const vnType = typeNames[d.typeName] || "Gợi ý văn chương";
+                const currentColor = typeColors[d.typeName] || "#f472b6"; // Màu mặc định nếu lỗi
+
+                // 3. Gán màu trực tiếp vào thuộc tính style của thẻ <b>
                 tooltip.innerHTML = `
-                    <b class="block text-rose-400 text-[9px] mb-1 uppercase tracking-widest">${vnType}</b>
+                    <b class="block text-[9px] mb-1 uppercase tracking-widest" style="color: ${currentColor}">
+                        ${vnType}
+                    </b>
                     <p class="text-white font-bold text-sm mb-1">→ ${d.new}</p>
                     <p class="text-slate-400 text-[11px] leading-relaxed">${d.hint}</p>
                 `;
+                
                 tooltip.style.display = 'block'; 
                 tooltip.style.opacity = '1';
             }
