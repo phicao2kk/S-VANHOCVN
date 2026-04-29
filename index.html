@@ -61,6 +61,19 @@
             font-size: 11px; z-index: 10000; pointer-events: none; width: 240px; display: none; opacity: 0; transition: opacity 0.2s;
         }
 
+        /* Tìm và thay thế đoạn cũ bằng đoạn này */
+        .literary-title-gradient {
+            background: linear-gradient(to right, #818cf8, #f472b6);
+            background-size: 100%;
+            -webkit-background-clip: text !important;
+            background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            /* Màu dự phòng nếu trình duyệt lỗi không load được gradient */
+            color: #818cf8; 
+            display: block;
+            width: fit-content;
+        }
+
         /* Architect results animation */
         #architect-results {
             transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -70,12 +83,28 @@
 
         /* Sidebar Buttons */
         .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 72px; padding: 12px 0; border-radius: 20px; transition: all 0.4s; color: #475569; position: relative; }
-        .nav-btn.active { color: #818cf8; }
+        .nav-btn.active { 
+            color: var(--rose) !important; /* Chuyển từ indigo sang rose (#f472b6) */
+        }
         .nav-icon-wrapper { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .nav-btn.active .nav-icon-wrapper { background: rgba(99, 102, 241, 0.12); border-color: rgba(99, 102, 241, 0.4); }
-        .status-dot { position: absolute; bottom: 0; width: 0; height: 3px; background: #6366f1; border-radius: 10px; transition: all 0.4s; }
-        .nav-btn.active .status-dot { width: 24px; }
-
+        .nav-btn.active .nav-icon-wrapper { 
+            background: rgba(58, 46, 52, 0.15) !important; /* Hồng mờ */
+            border-color: rgba(244, 114, 182, 0.4) !important; 
+            box-shadow: 0 0 15px rgba(244, 114, 182, 0.1);
+        }
+        .status-dot { 
+            position: absolute; 
+            bottom: 0; 
+            width: 0; 
+            height: 3px; 
+            background: var(--rose) !important; /* Đổi sang màu hồng */
+            border-radius: 10px; 
+            transition: all 0.4s; 
+        }
+        .nav-btn.active .status-dot { 
+            width: 24px; 
+            box-shadow: 0 0 10px var(--rose); /* Hiệu ứng phát sáng hồng */
+        }
         /* Neural Overlay */
         .neural-overlay { 
             position: absolute; 
@@ -127,11 +156,19 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-4 px-4 py-2 rounded-full border border-white/5 bg-white/5">
-                <span class="text-[11px] font-bold text-white tracking-wide uppercase">Bộ phân tích hoạt động</span>
-                <div class="relative w-3 h-3">
-                    <div class="absolute inset-0 bg-emerald-500 rounded-full animate-ping"></div>
-                    <div class="relative bg-emerald-500 w-3 h-3 rounded-full"></div>
+            <div class="flex items-center gap-4 px-4 py-2 rounded-full border border-white/5 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all duration-300 cursor-pointer group">
+                <div class="flex flex-col items-start">
+                    <span class="text-[9px] font-medium text-rose-400 uppercase tracking-[0.2em] leading-tight">Trợ lý Thông minh</span>
+                    <span class="text-[11px] font-bold text-white tracking-wide">PHÂN TÍCH AI</span>
+                </div>
+                
+                <!-- Icon Robot/AI với vòng tròn xoay nhẹ -->
+                <div class="relative w-8 h-8 flex items-center justify-center">
+                    <div class="absolute inset-0 border-2 border-rose-500/20 rounded-full"></div>
+                    <div class="absolute inset-0 border-t-2 border-rose-500 rounded-full animate-spin [animation-duration:3s]"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+                    </svg>
                 </div>
             </div>
         </header>
@@ -162,13 +199,13 @@
                     <!-- MODULE 1: ARCHITECT -->
                     <div id="architect-view" class="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom duration-700">
                         <div class="relative">
-                            <h2 class="text-4xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">Kiến Trúc Văn Chương</h2>
+                            <h2 class="text-3xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">Kiến Trúc Văn Chương</h2>
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-2">Cấu trúc & Luận điểm văn học</p>
                         </div>
 
-                        <div class="glass p-8 rounded-[2.5rem] border-indigo-500/20 relative group overflow-hidden">
-                            <h5 class="text-[10px] font-black uppercase text-indigo-400 mb-5 italic flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                        <div class="glass p-8 rounded-[2.5rem] border-rose-500/20 relative group overflow-hidden">
+                            <h5 class="text-[10px] font-black uppercase text-rose-400 mb-5 italic flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                                 Nhập đề bài nghị luận
                             </h5>
                             <textarea id="topic-input" 
@@ -241,7 +278,9 @@
                     <div id="studio-view" class="hidden flex flex-col gap-8 animate-in fade-in slide-in-from-right duration-700">
                         <div class="flex flex-col md:flex-row justify-between gap-6">
                             <div>
-                                <h2 class="text-3xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-rose-400">Thiết Kế Tư Duy Văn Học</h2>
+                                <h2 class="text-3xl font-black italic tracking-tighter uppercase literary-title-gradient">
+                                    Thiết Kế Tư Duy Văn Học
+                                </h2>
                                 <p class="text-[9px] text-indigo-400/60 font-bold uppercase tracking-[0.3em] mt-2">Tư duy văn chương & Thẩm định nghệ thuật</p>
                             </div>
                             <!-- Action Toolbar -->
@@ -256,7 +295,8 @@
                                     <span class="text-slate-400 group-hover:text-red-400">Đặt lại</span>
                                 </button>
 
-                                <button onclick="masterScanner()" id="btn-scan" class="flex-[2] md:flex-none bg-indigo-600 hover:bg-indigo-500 px-10 py-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-indigo-500/20 transition-all active:scale-95">
+                                <button onclick="masterScanner()" id="btn-scan" 
+                                    class="flex-[2] md:flex-none bg-gradient-to-r from-rose-400 to-rose-600 hover:from-rose-500 hover:to-rose-700 px-10 py-3 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] text-white shadow-[0_0_20px_rgba(244,114,182,0.3)] hover:shadow-[0_0_30px_rgba(244,114,182,0.5)] transition-all active:scale-95">
                                     Quét & Phân tích
                                 </button>
                             </div>
@@ -293,8 +333,8 @@
 
             <!-- CỘT CHẨN ĐOÁN -->
             <aside id="diagnostic-sidebar" class="aside-mobile w-[400px] border-l border-white/5 bg-gray-950/30 p-8 hidden flex flex-col gap-8 overflow-y-auto">
-                <div class="p-6 glass rounded-[2.5rem] border-indigo-500/30">
-                    <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4 italic">Bản đồ năng lực văn chương</h4>
+                <div class="p-6 glass rounded-[2.5rem] border-rose-500/30">
+                    <h4 class="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4 italic">Bản đồ năng lực văn chương</h4>
                     <canvas id="radarChart"></canvas>
                 </div>
 
@@ -325,7 +365,7 @@
             <p class="text-[11px] text-slate-400 font-bold uppercase mb-10 tracking-widest">Hành động này sẽ xóa toàn bộ nơ-ron dữ liệu.</p>
             <div class="flex gap-4">
                 <button onclick="closeConfirm()" class="flex-1 py-4 rounded-2xl glass text-[10px] font-black uppercase">Hủy</button>
-                <button onclick="executeClear()" class="flex-1 py-4 rounded-2xl bg-red-600 text-[10px] font-black uppercase text-white shadow-lg shadow-red-600/20">Xác nhận</button>
+                <button onclick="executeClear()" class="flex-1 py-4 rounded-2xl bg-red-600 text-[10px] font-black uppercase text-white shadow-lg shadow-red-600/20">Xác nhận xóa</button>
             </div>
         </div>
     </div>
@@ -1998,21 +2038,66 @@ function updateBoardUI(s, vocabCount) {
             navigator.clipboard.writeText(text).then(() => showNeuralToast("Đã sao chép văn bản!", "upgrade"));
         }
 
-        function showNeuralToast(msg, type) {
-            const t = document.createElement('div');
-            t.className = `fixed bottom-8 right-8 px-6 py-4 glass rounded-2xl z-[10001] animate-in slide-in-from-bottom border-l-4 ${type==='upgrade'?'border-indigo-500':'border-red-500'}`;
-            t.innerHTML = `<p class="text-xs font-bold text-white">${msg}</p>`;
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+        function showNeuralToast(msg, type = 'upgrade') {
+            // Xóa toast cũ nếu đang hiện để tránh chồng đè
+            const oldToast = document.querySelector('.neural-toast');
+            if (oldToast) oldToast.remove();
+
+            const toast = document.createElement('div');
+            // neural-toast là class để dễ quản lý, z-index cực cao để hiện trên cả modal
+            toast.className = `neural-toast fixed bottom-10 left-1/2 -translate-x-1/2 md:left-auto md:right-8 md:translate-x-0 px-6 py-4 glass rounded-2xl z-[10005] animate-in slide-in-from-bottom duration-300 border-l-4 ${type === 'error' ? 'border-red-500' : 'border-indigo-500'} flex items-center gap-4 shadow-2xl`;
+            
+            toast.innerHTML = `
+                <div class="text-xl">${type === 'error' ? '🚫' : '✨'}</div>
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-500 leading-none mb-1">Thông báo hệ thống</p>
+                    <p class="text-[13px] font-bold text-white">${msg}</p>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Tự động biến mất sau 3 giây
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
         }
 
         function clearAll() { document.getElementById('neural-confirm').classList.remove('hidden'); }
         function closeConfirm() { document.getElementById('neural-confirm').classList.add('hidden'); }
         function executeClear() {
-            document.getElementById('essay-editor').innerHTML = "";
-            document.getElementById('topic-input').value = "";
-            updateBoardUI({wc:0, score:0, hasLyLuan:false, hasDanChung:false});
+            // 1. Dọn sạch input và editor
+            const editor = document.getElementById('essay-editor');
+            const topicInput = document.getElementById('topic-input');
+            const archStructure = document.getElementById('arch-structure');
+            const archPlan = document.getElementById('arch-plan');
+
+            if (editor) editor.innerHTML = "";
+            if (topicInput) topicInput.value = "";
+            if (archStructure) archStructure.value = "";
+            if (archPlan) archPlan.value = "";
+
+            // 2. Reset các chỉ số
+            document.getElementById('wc').innerText = "0";
+            if (document.getElementById('score-ui')) document.getElementById('score-ui').innerText = "---";
+            if (document.getElementById('band-ui')) document.getElementById('band-ui').innerText = "---";
+            
+            // 3. Đóng các phần hiển thị phụ
+            document.getElementById('architect-results').classList.remove('active');
+            document.getElementById('outline-note-display').classList.add('hidden');
+
+            // 4. Quay về tab đầu tiên
+            switchTab('architect');
+
+            // 5. Đóng Modal xác nhận
             closeConfirm();
+
+            // 6. HIỆN THÔNG BÁO (QUAN TRỌNG)
+            setTimeout(() => {
+                showNeuralToast("Hệ thống đã xóa sạch toàn bộ dữ liệu!", "upgrade");
+            }, 300); // Delay nhẹ để mượt hơn sau khi đóng modal
         }
 
         /* --- TOOLTIP POSITIONING --- */
