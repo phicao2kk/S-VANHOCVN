@@ -51,7 +51,23 @@
         }
         #essay-editor:empty:before { content: attr(placeholder); color: rgba(255, 255, 255, 0.2); font-style: italic; }
 
+        /* Gạch chân mặc định */
         .ai-marker { cursor: pointer; transition: 0.3s; position: relative; border-radius: 4px; padding: 2px 0; }
+
+        /* 1. Nâng cấp từ vựng (UPGRADE) - Màu Indigo/Tím */
+        .ai-marker.type-upgrade { border-bottom: 3px solid #6366f1; background: rgba(99, 102, 241, 0.1); }
+
+        /* 2. Sắc thái biểu cảm (STYLE) - Màu Hồng (Rose) */
+        .ai-marker.type-style { border-bottom: 3px solid #f472b6; background: rgba(244, 114, 182, 0.1); }
+
+        /* 3. Liên kết Logic (LOGIC/SENTENCE) - Màu Xanh lá (Emerald) */
+        .ai-marker.type-logic, .ai-marker.type-sentence { border-bottom: 3px solid #10b981; background: rgba(16, 185, 129, 0.1); }
+
+        /* 4. Lý luận văn học (THEORY) - Màu Vàng (Amber) */
+        .ai-marker.type-theory { border-bottom: 3px solid #fbbf24; background: rgba(251, 191, 36, 0.1); }
+
+        /* 5. Nhịp điệu thơ ca (POETRY) - Màu Xanh dương (Cyan) */
+        .ai-marker.type-poetry { border-bottom: 3px solid #06b6d4; background: rgba(6, 182, 212, 0.1); }
         .ai-marker.error { border-bottom: 3px solid var(--red); background: rgba(239, 68, 68, 0.1); }
         .ai-marker.upgrade { border-bottom: 3px solid var(--indigo); background: rgba(99, 102, 241, 0.1); }
 
@@ -2023,20 +2039,30 @@ function masterScanner() {
         // Sắp xếp key dài trước để tránh lỗi thay thế từ con (ví dụ 'nhân vật' trước 'nhân')
         const sortedKeys = Object.keys(LITERARY_DATABASE).sort((a, b) => b.length - a.length);
 
+        // Trong hàm masterScanner, tìm vòng lặp sortedKeys.forEach...
         sortedKeys.forEach(word => {
             const regex = new RegExp(`\\b${word}\\b`, 'gi');
             if (regex.test(text)) {
                 vocabCount++;
                 const d = LITERARY_DATABASE[word];
-                // Chỉ highlight, không làm hỏng cấu trúc văn bản
-                processedHTML = processedHTML.replace(regex, (match) => {
-                    return `<span class="ai-marker upgrade" data-new="${d.new}" data-hint="${d.hint}" data-reason="${d.reason}">${match}</span>`;
-                });
+                
+                // Chuyển type thành class (VD: UPGRADE -> type-upgrade)
+                const typeClass = "type-" + d.type.toLowerCase();
 
+                processedHTML = processedHTML.replace(regex, (match) => {
+                    // Gán class động dựa trên loại từ
+                    return `<span class="ai-marker ${typeClass}" 
+                                data-type-name="${d.type}"
+                                data-new="${d.new}" 
+                                data-hint="${d.hint}" 
+                                data-reason="${d.reason}">${match}</span>`;
+                });
+                
+                // Cập nhật timeline bên phải với màu tương ứng
                 timeline.innerHTML += `
-                    <div class="glass p-4 rounded-xl border-l-4 border-indigo-500 animate-in slide-in-from-right">
-                        <p class="text-[10px] font-black text-indigo-400 uppercase">${word} → ${d.new}</p>
-                        <p class="text-white text-[11px] mt-1">${d.reason}</p>
+                    <div class="glass p-4 rounded-xl border-l-4 ${typeClass === 'type-upgrade' ? 'border-indigo-500' : 'border-rose-500'} animate-in slide-in-from-right">
+                        <p class="text-[8px] font-black opacity-50 uppercase">${d.type}</p>
+                        <p class="text-[10px] font-black text-white uppercase">${word} → ${d.new}</p>
                     </div>`;
             }
         });
@@ -2169,13 +2195,42 @@ function updateBoardUI(s, vocabCount) {
         document.addEventListener('mouseover', e => {
             if (e.target.classList.contains('ai-marker')) {
                 const d = e.target.dataset;
-                tooltip.innerHTML = `<b class="block text-indigo-400 text-[9px] mb-1 uppercase">Gợi ý nâng cấp</b><p class="text-white font-bold text-sm mb-1">→ ${d.new}</p><p class="text-slate-400 leading-relaxed">${d.hint}</p>`;
-                tooltip.style.display = 'block'; tooltip.style.opacity = '1';
+                // Chuyển tên loại sang tiếng Việt để thân thiện
+                const typeNames = {
+                    "UPGRADE": "Nâng cấp từ ngữ",
+                    "STYLE": "Sắc thái diễn đạt",
+                    "LOGIC": "Liên kết mạch lạc",
+                    "THEORY": "Lý luận văn học",
+                    "POETRY": "Tính nhạc & Thơ ca",
+                    "SENTENCE": "Cấu trúc câu"
+                };
+                const vnType = typeNames[d.typeName] || "Gợi ý văn chương";
+
+                tooltip.innerHTML = `
+                    <b class="block text-rose-400 text-[9px] mb-1 uppercase tracking-widest">${vnType}</b>
+                    <p class="text-white font-bold text-sm mb-1">→ ${d.new}</p>
+                    <p class="text-slate-400 text-[11px] leading-relaxed">${d.hint}</p>
+                `;
+                tooltip.style.display = 'block'; 
+                tooltip.style.opacity = '1';
             }
         });
         document.addEventListener('mousemove', e => {
             if(tooltip.style.display === 'block') {
-                tooltip.style.left = (e.clientX + 20) + 'px';
+                const tooltipWidth = 240;
+                const padding = 20;
+                let leftPos = e.clientX + padding;
+                
+                // Nếu vị trí hiện tại + chiều rộng tooltip > chiều rộng màn hình
+                if (leftPos + tooltipWidth > window.innerWidth) {
+                    // Đẩy tooltip sang bên trái ngón tay/con trỏ
+                    leftPos = e.clientX - tooltipWidth - padding;
+                }
+
+                // Đảm bảo không bị dính vào lề trái (nếu màn hình quá nhỏ)
+                leftPos = Math.max(10, leftPos);
+
+                tooltip.style.left = leftPos + 'px';
                 tooltip.style.top = (e.clientY + 20) + 'px';
             }
         });
